@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from dash import html, dcc
 from datetime import datetime as dt
-from data import company_info, db_info, USER_MAPPING
+from data_source import company_info, db_info, USER_MAPPING
 from sqlalchemy import create_engine
 import pandas as pd
 
@@ -128,16 +128,11 @@ def set_dates(company_db):
     ], prevent_initial_call=True
 )
 def output_data(start_date, end_date, database):
+    # print(f'issued by app.py start date: {start_date} with format {type(start_date)}')
+    # print(f'issued by app.py end date: {end_date} with format {type(end_date)}')
 
-    end_date_datetime = dt.strptime(end_date, "%Y-%m-%dT%H:%M:%S")
-    formatted_end_date = end_date_datetime.strftime("%Y-%m-%d")
-
-    start_date_datetime = dt.strptime(start_date, "%Y-%m-%dT%H:%M:%S")
-    formatted_start_date = start_date_datetime.strftime("%Y-%m-%d")
-
-
-    return [formatted_start_date, 
-            formatted_end_date, 
+    return [start_date, 
+            end_date, 
             database]
 
 

@@ -1,3 +1,20 @@
+from datetime import datetime
+import numpy as np
+
+def check_date_format(date_str):
+    try:
+        # Attempt to parse the date string using the first format "%Y-%m-%dT%H:%M:%S"
+        return np.datetime64(datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S"))
+        
+    except ValueError:
+        try:
+            # Attempt to parse the date string using the second format "%Y-%m-%d"
+            return np.datetime64(datetime.strptime(date_str, "%Y-%m-%d"))
+            
+        except ValueError:
+            # If neither format matches, raise an exception or return an appropriate message
+            raise ValueError("Invalid date format")
+
 company_info = [
     {'cid': '1',
      'data': {

@@ -2,9 +2,10 @@ from datetime import datetime as dt
 from datetime import timedelta
 import dash
 import dash_bootstrap_components as dbc
-from data import time_series_data, db_info, fin_tiles_values, company_info, months
+from data_source import time_series_data, db_info, fin_tiles_values, company_info, months,check_date_format
 from dash import dcc, html, callback, Output, Input, dash_table, State
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine, exc
 import plotly.express as px
 from dateutil.relativedelta import relativedelta
@@ -490,6 +491,7 @@ layout = html.Div(
     prevent_initial_call=True
 )
 def data_output(end_date, database, cust_select, time_freq, b1, b2, is_open_1, b3, b4, is_open_2, b5, b6, is_open_3):
+    # print(f'received by sales.py end date: {end_date} with format {type(end_date)}')
 
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
@@ -507,7 +509,10 @@ def data_output(end_date, database, cust_select, time_freq, b1, b2, is_open_1, b
     df_fGl['net'] = df_fGl['credit'] - df_fGl['debit']
     df_fGl['period'] = df_fGl['voucher_date'].dt.strftime(
         date_format='%m')  # return date as 01-12 i.e 2023-07-24 --> 07
-    cy_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-08-31
+    cy_end_date_init = check_date_format(end_date)
+    cy_end_date = np.datetime64(cy_end_date_init)
+    # cy_end_date = end_date_datetime.strftime("%Y-%m-%d")
+    # cy_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-08-31
     cy_m_begin_date = cy_end_date.replace(day=1)  # 2023-08-01
     cy_begin_date = cy_m_begin_date.replace(month=1)  # 2023-01-01
     cy_pm_end_date = cy_m_begin_date - timedelta(days=1)  # 2023-07-31 ok
@@ -1038,7 +1043,9 @@ def budget_area(end_date, database, rev_type):
     df_fGl = pd.read_sql('fGL', engine)
     df_budget = pd.read_sql('fBudget', engine)
 
-    cy_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-08-31
+    cy_end_date_init = check_date_format(end_date)
+    cy_end_date = np.datetime64(cy_end_date_init)
+    # cy_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-08-31
     cy_begin_date = cy_end_date.replace(month=1, day=1)  # 2023-01-01
 
     rev_types = ([i['filt']
