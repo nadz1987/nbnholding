@@ -3,6 +3,7 @@ import dash_auth
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from dash import html, dcc
+from datetime import datetime as dt
 from data import company_info, db_info, USER_MAPPING
 from sqlalchemy import create_engine
 import pandas as pd
@@ -27,7 +28,7 @@ secondary_row = dbc.Row(
                     options=[
                         {'label': i['data']['long_name'], 'value': i['data']['database']} for i in company_info
                     ],
-                    value='nbn_logistics',
+                    value='elite_security',
                     id='company-name',
                     className='mt-1',
                     optionHeight=35,
@@ -43,15 +44,16 @@ secondary_row = dbc.Row(
                     min_date_allowed=None,
                     max_date_allowed=None,
                     updatemode='bothdates',
-                    start_date=None,
-                    end_date=None,  # dt(2023, 8, 31)
+                    start_date=dt(2023, 1, 1).date(),
+                    end_date=dt(2023, 1, 31).date(),  # dt(2023, 8, 31)
                 )
             ], width={'size': 3},
             style={'margin-top': 2},
         ),
         dbc.Tooltip('The date range need to be first day and last day of any given period',
                     target='dt-pkr-range',
-                    placement='top'),
+                    placement='top',
+                    ),
         dbc.Col(
             [
                 dbc.Nav(
@@ -106,6 +108,7 @@ def set_dates(company_db):
     earliest_date = df_fgl['voucher_date'].min()
     closest_date = df_fgl['voucher_date'].max()
 
+
     return [earliest_date,
             closest_date,
             closest_date,
@@ -125,7 +128,17 @@ def set_dates(company_db):
     ], prevent_initial_call=True
 )
 def output_data(start_date, end_date, database):
-    return [start_date, end_date, database]
+
+    end_date_datetime = dt.strptime(end_date, "%Y-%m-%dT%H:%M:%S")
+    formatted_end_date = end_date_datetime.strftime("%Y-%m-%d")
+
+    start_date_datetime = dt.strptime(start_date, "%Y-%m-%dT%H:%M:%S")
+    formatted_start_date = start_date_datetime.strftime("%Y-%m-%d")
+
+
+    return [formatted_start_date, 
+            formatted_end_date, 
+            database]
 
 
 if __name__ == '__main__':
