@@ -15,8 +15,9 @@ from datetime import datetime as dt
 
 dash.register_page(__name__, external_stylesheets=[dbc.themes.PULSE])
 
-filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type', 'Nationality': 'nationality',
-                 'Sex': 'sex', 'Maritial Status': 'maritial_state', 'Age Group': 'age_group', 'Service Period': 'service_period'}
+filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type',
+                 'Nationality': 'nationality', 'Sex': 'sex', 'Maritial Status': 'maritial_state',
+                 'Age Group': 'age_group', 'Service Period': 'service_period'}
 
 row_one = dbc.Row(
     children=[
@@ -131,7 +132,7 @@ def service_bracket(age):
      Input(component_id='end-date', component_property='data')],
     prevent_initial_call=True
 )
-def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw,end_date):
+def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, end_date):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
 
