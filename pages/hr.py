@@ -160,11 +160,10 @@ def service_bracket(age):
      Input(component_id='second-dpdw', component_property='value'),
      Input(component_id='first-dpn-dpdw', component_property='value'),
      Input(component_id='second-dpn-dpdw', component_property='value'),
-     Input(component_id='end-date', component_property='data'),
      Input(component_id='first-selection', component_property='value')],
     prevent_initial_call=True
 )
-def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, end_date, first_selection):
+def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, first_selection):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
 
