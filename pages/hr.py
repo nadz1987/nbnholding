@@ -1,7 +1,6 @@
 import dash
 from dash import dcc
 from dash import html
-from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
@@ -12,11 +11,15 @@ from sqlalchemy import create_engine
 from data import db_info
 from datetime import datetime as dt
 
-
 dash.register_page(__name__, external_stylesheets=[dbc.themes.PULSE])
 
-filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type', 'Nationality': 'nationality',
-                 'Sex': 'sex', 'Maritial Status': 'maritial_state', 'Age Group': 'age_group', 'Service Period': 'service_period'}
+filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type',
+                 'Nationality': 'nationality',
+                 'Sex': 'sex', 'Maritial Status': 'maritial_state', 'Age Group': 'age_group',
+                 'Service Period': 'service_period'}
+
+current_date = dt.now()
+start_date = dt.strptime(str(dt.now().year) + '-01-01', '%Y-%m-%d')
 
 row_one = dbc.Row(
     children=[
@@ -71,22 +74,51 @@ row_one = dbc.Row(
 
 row_two = dbc.Row(
     children=[
-        html.H5('EMPLOYEE MOVEMENT FOR THE PERIOD',
+        html.H5(f'EMPLOYEE MOVEMENT FOR THE PERIOD FOR THE PERIOD FROM {start_date.date()} TO {current_date.date()}',
                 className='text-center text-primary mb-4'),
+        dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        dcc.Dropdown(
+                            id='first-selection',
+                            multi=False,
+                            clearable=False,
+                            value='sex',
+                            options=[{'label': v, 'value': k}
+                                     for v, k in filters_lists.items()],
+                            className='mb-1'
+                        )
+                    ]
+                ),
+                dbc.Col(
+                    children=[
+                        dcc.Dropdown(
+                            id='second-selection',
+                            multi=True,
+                            clearable=True,
+                            value=[],
+                            options=[],
+                            className='mb-1'
+                        )
+                    ]
+                )
+            ]
+        ),
         html.Div(
-            children=[], id='pl_results')
+            children=[], id='staff-movement')
     ]
 )
 
 layout = html.Div(
     dcc.Loading(children=[row_one,
-                          row_two],
+                          html.Hr(),
+                          row_two,
+                          html.Hr()],
                 color='#119DFF',
                 type='dot',
                 fullscreen=True)
 )
-
-current_date = datetime.now()
 
 
 def age_bracket(age):
@@ -119,40 +151,39 @@ def service_bracket(age):
     [Output(component_id='first-dpn-dpdw', component_property='options'),
      Output(component_id='second-dpdw', component_property='options'),
      Output(component_id='second-dpn-dpdw', component_property='options'),
-     Output(component_id='hr-analytic', component_property='figure')
+     Output(component_id='hr-analytic', component_property='figure'),
+     Output(component_id='second-selection', component_property='options')
      ],
-
 
     [Input(component_id='database', component_property='data'),
      Input(component_id='first-dpdw', component_property='value'),
      Input(component_id='second-dpdw', component_property='value'),
      Input(component_id='first-dpn-dpdw', component_property='value'),
      Input(component_id='second-dpn-dpdw', component_property='value'),
-     Input(component_id='end-date', component_property='data')],
+     Input(component_id='end-date', component_property='data'),
+     Input(component_id='first-selection', component_property='value')],
     prevent_initial_call=True
 )
-def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw,end_date):
+def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, end_date, first_selection):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
 
-    df_dEmployee = pd.read_sql('dEmployee', engine, parse_dates=[
-                               'dob', 'doj', 'confirmation_date', 'last_increment', 'last_rejoin', 'termination_date'])
+    df_demployee = pd.read_sql('dEmployee', engine, parse_dates=[
+        'dob', 'doj', 'confirmation_date', 'last_increment', 'last_rejoin', 'termination_date'])
 
-    cy_end_date = dt.strptime(end_date, '%Y-%m-%d')
-
-    df_dEmployee['age'] = df_dEmployee['dob'].apply(
+    df_demployee['age'] = df_demployee['dob'].apply(
         lambda x: relativedelta(current_date, x).years)
-    df_dEmployee['age_group'] = df_dEmployee['age'].apply(age_bracket)
-    df_dEmployee['service'] = df_dEmployee['doj'].apply(
+    df_demployee['age_group'] = df_demployee['age'].apply(age_bracket)
+    df_demployee['service'] = df_demployee['doj'].apply(
         lambda x: relativedelta(current_date, x).years)
-    df_dEmployee['service_period'] = df_dEmployee['service'].apply(
+    df_demployee['service_period'] = df_demployee['service'].apply(
         service_bracket)
-    existing_emp_filt = (~df_dEmployee['termination_date'].notna()) | (df_dEmployee['termination_date'] > cy_end_date)
+    existing_emp_filt = (~df_demployee['termination_date'].notna()) | (df_demployee['termination_date'] > current_date)
 
-    df_dEmployee = df_dEmployee.loc[existing_emp_filt]
+    df_demployee = df_demployee.loc[existing_emp_filt]
 
     # create a subset from the df_dEmployees which has only two columns [first_dropdown and second dropdown]
-    df_graph = df_dEmployee[[first_dpdw, second_dpdw]]
+    df_graph = df_demployee[[first_dpdw, second_dpdw]]
     filt = (df_graph[first_dpdw].isin(first_dpn_dpdw)) & (
         df_graph[second_dpdw].isin(second_dpn_dpdw))
     df_graph = df_graph.loc[filt]
@@ -170,15 +201,78 @@ def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw,e
                       xaxis_title=first_dpdw.title(),
                       yaxis_title='No of Staff',
                       legend_title_text=second_dpdw.title())
-    filtered_first = df_dEmployee.loc[df_dEmployee[first_dpdw].isin(
+    filtered_first = df_demployee.loc[df_demployee[first_dpdw].isin(
         first_dpn_dpdw)]
 
     return [
         [{'label': i.title(), 'value': i}
-         for i in sorted(df_dEmployee[first_dpdw].unique())],
+         for i in sorted(df_demployee[first_dpdw].unique())],
         [{'label': v, 'value': k}
-            for v, k in filters_lists.items() if k != first_dpdw],
+         for v, k in filters_lists.items() if k != first_dpdw],
         [{'label': j.title(), 'value': j}
          for j in sorted(filtered_first[second_dpdw].unique())],
-        fig
+        fig,
+        [{'label': i.upper(), 'value': i}
+         for i in sorted(df_demployee[first_selection].unique())]
     ]
+
+
+@callback(
+    Output(component_id='second-selection', component_property='value'),
+    Input(component_id='second-selection', component_property='options')
+)
+def set_values(selection):
+    return [x['value'] for x in selection]
+
+
+@callback(
+    Output(component_id='staff-movement', component_property='children'),
+    [Input(component_id='database', component_property='data'),
+     Input(component_id='first-selection', component_property='value'),
+     Input(component_id='second-selection', component_property='value')]
+)
+def update_emp_table(database, primary, secondary):
+    if len(secondary) == 0:
+        return dash.no_update
+    else:
+        engine = create_engine(
+            f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
+
+        df_demployee = pd.read_sql('dEmployee', engine, parse_dates=[
+            'dob', 'doj', 'confirmation_date', 'last_increment', 'last_rejoin', 'termination_date'])
+
+        df_demployee['age'] = df_demployee['dob'].apply(
+            lambda x: relativedelta(current_date, x).years)
+        df_demployee['age_group'] = df_demployee['age'].apply(age_bracket)
+        df_demployee['service'] = df_demployee['doj'].apply(
+            lambda x: relativedelta(current_date, x).years)
+        df_demployee['service_period'] = df_demployee['service'].apply(
+            service_bracket)
+
+        filt_emp_start = ((df_demployee['doj'] < start_date) & ((~df_demployee['termination_date'].notna()) |
+                                                                (df_demployee['termination_date'] >= start_date)) &
+                          (df_demployee[primary].isin(secondary)))
+
+        emp_start: int = len(df_demployee.loc[filt_emp_start]['emp_id'].unique())
+
+        filt_additions = (df_demployee['doj'] >= start_date) & (df_demployee['doj'] <= current_date) & (df_demployee[primary].isin(secondary))
+
+        emp_additions: int = len(df_demployee.loc[filt_additions]['emp_id'].unique())
+
+        filt_terminations = (df_demployee['termination_date'] >= start_date) & (
+                df_demployee['termination_date'] <= current_date) & (df_demployee[primary].isin(secondary))
+
+        emp_terminations: int = len(df_demployee.loc[filt_terminations]['emp_id'].unique())
+
+        emp_movement_data = pd.DataFrame(
+            {
+                "Description": ['No of staff at the start', '[+] No of staff joined', '[-] No of staff resigned',
+                                'No of staff at the end'],
+                "# Staff": [emp_start, emp_additions, emp_terminations * -1,
+                            (emp_start + emp_additions - emp_terminations)],
+            }
+        )
+
+        emp_movement = dbc.Table.from_dataframe(emp_movement_data, striped=True, bordered=True, hover=True)
+
+        return emp_movement

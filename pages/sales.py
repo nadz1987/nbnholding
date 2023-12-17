@@ -403,14 +403,23 @@ row_ten = html.Div(
 
 layout = html.Div(
     dcc.Loading(children=[row_one,
+                          html.Hr(),
                           row_two,
+                          html.Hr(),
                           row_three,
+                          html.Hr(),
                           row_four,
+                          html.Hr(),
                           row_five,
+                          html.Hr(),
                           row_six,
+                          html.Hr(),
                           row_seven,
+                          html.Hr(),
                           row_eight,
+                          html.Hr(),
                           row_nine,
+                          html.Hr(),
                           row_ten], color='#119DFF', type='dot', fullscreen=True)
 )
 
