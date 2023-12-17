@@ -1,10 +1,9 @@
 import dash
 import dash_bootstrap_components as dbc
-from data_source import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order,check_date_format
+from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order
 from dash import dcc, html, callback, Output, Input, dash_table
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-import numpy as np
 from sqlalchemy import create_engine
 from datetime import datetime as dt
 from datetime import timedelta
@@ -161,8 +160,6 @@ layout = html.Div(
     prevent_initial_call=True
 )
 def data_output(start_date, end_date, database, time_freq):
-    # print(f'received by finance.py start date: {start_date} with format {type(start_date)}')
-    # print(f'received by finance.py end date: {end_date} with format {type(end_date)}')
 
 
     engine = create_engine(
@@ -179,33 +176,14 @@ def data_output(start_date, end_date, database, time_freq):
     df_budget = pd.read_sql('fBudget', engine)
 
     # start_date coming from app.py [DatepickerRange] format like 2023-04-07 i.e 2023-07-01
-    cm_end_date_init = check_date_format(end_date) # this will convert text type datetime to datetype
-    cm_end_date = np.datetime64(cm_end_date_init) 
-    print(f'cm_end_date: {cm_end_date} : {type(cm_end_date)}')
-    # cm_end_date = end_date_datetime.strftime("%Y-%m-%d")
-
-    cm_begin_date_init = check_date_format(start_date) # this will convert text type datetime to datetype
-    cm_begin_date =  np.datetime64(cm_begin_date_init)
-    print(f'cm_begin_date: {cm_begin_date} : {type(cm_begin_date)}')
-    # cm_begin_date = start_date_datetime.strftime("%Y-%m-%d")
-    # cm_begin_date = dt.strptime(start_date, '%Y-%m-%d')
-    # cm_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-07-31
-    pm_end_date = cm_begin_date - np.timedelta64(1, 'D')  # 2023-06-30
-    print(f'pm_end_date: {pm_end_date} : {type(pm_end_date)}')
-    pm_begin_date = np.datetime64(pm_end_date, 'M') + np.timedelta64(0, 'D')  # 2023-06-01
-    print(f'pm_begin_date: {pm_begin_date} : {type(pm_begin_date)}')
-    cy_begin_date = np.datetime64(cm_begin_date,'Y') + np.timedelta64(0,'D')
-    # cy_begin_date = cm_begin_date.replace(month=1)  # 2023-01-01
-    print(f'cy_begin_date: {cy_begin_date} : {type(cy_begin_date)}')
-    py_end_date = cm_end_date - np.timedelta64(365, 'D') ### THIS CODE IS WRONG. DOES NOT CONSIDER LEAP YEAR
-    # py_end_date = cm_end_date - relativedelta(years=1)  # 2022-07-31
-    print(f'py_end_date: {py_end_date} : {type(py_end_date)}')
-    py_m_begin_date = np.datetime64(py_end_date, 'M') + np.timedelta64(0, 'D')  # 2023-06-01
-    # py_m_begin_date = py_end_date.replace(day=1)  # 2022-07-01
-    print(f'py_m_begin_date: {py_m_begin_date} : {type(py_m_begin_date)}')
-    py_begin_date = np.datetime64(py_end_date,'Y') + np.timedelta64(0,'D')
-    # py_begin_date = py_m_begin_date.replace(month=1)  # 2022-01-01
-    print(f'py_begin_date: {py_begin_date} : {type(py_begin_date)}')
+    cm_begin_date = dt.strptime(start_date, '%Y-%m-%d')
+    cm_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-07-31
+    pm_end_date = cm_begin_date - timedelta(days=1)  # 2023-06-30
+    pm_begin_date = pm_end_date.replace(day=1)  # 2023-06-01
+    cy_begin_date = cm_begin_date.replace(month=1)  # 2023-01-01
+    py_end_date = cm_end_date - relativedelta(years=1)  # 2022-07-31
+    py_m_begin_date = py_end_date.replace(day=1)  # 2022-07-01
+    py_begin_date = py_m_begin_date.replace(month=1)  # 2022-01-01
 
     tile_data_value = {'matric': '', 'value': '', 'change': '',
                        'colour': '', 'icon': '', 'comparative': ''}  # this is the structure of each finacial matric tile
@@ -449,7 +427,6 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     df_report = df_np.copy()
     df_first_level_group = df_dCoAAdler.drop_duplicates(
         subset=['first_level', 'third_level'])
-    #The dataframe return from above will have unique combination of first_level and third_level
 
     df_report_merged = pd.merge(left=df_report, right=df_first_level_group[[
         'first_level', 'third_level']], on='first_level', how='left')
@@ -459,38 +436,32 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         filt_period_df = df_report_merged.loc[filt_period]
         filt_period_df = filt_period_df.groupby(
             by=['period', 'third_level'], as_index=False)['net'].sum()
-        #This will return totals for each group in third_level (i.e Reveneu, Cost of Goods sold and Overhead etc)
         filt_period_df.rename(
             columns={'third_level': 'first_level'}, inplace=True)
-        # Renaming the column name for concatenation purpose
-        filt_period_df.set_index(keys='first_level', inplace=True) # Chaning the index for loc[] to use as row index
-        #For each iteration of period grab the specific row / column values for calculation purpose
+        filt_period_df.set_index(keys='first_level', inplace=True)
         revenue = filt_period_df.loc['Direct Income', 'net']
         cogs = filt_period_df.loc['Cost of Sales', 'net']
         gp = revenue + cogs
-        npr = filt_period_df['net'].sum()
+        np = filt_period_df['net'].sum()
         try:
             gp_pct = gp / revenue * 100
-            np_pct = npr / revenue * 100
-        except ZeroDivisionError: # In case revenue is zero
+            np_pct = np / revenue * 100
+        except ZeroDivisionError:
             gp_pct = 0
             np_pct = 0
         filt_period_df.reset_index(inplace=True)
-        #Creating dictionaries contaning rows created for calculated measures
         gp_amt_row = {'period': period,
                       'first_level': 'Gross Proft / Loss', 'net': gp}
         gp_pct_row = {'period': period,
                       'first_level': 'Gross Proft / Loss %', 'net': gp_pct}
         np_amt_row = {'period': period,
-                      'first_level': 'Net Profit / Loss', 'net': npr}
+                      'first_level': 'Net Profit / Loss', 'net': np}
         np_pct_row = {'period': period,
                       'first_level': 'Net Profit / Loss %', 'net': np_pct}
-        #Appending calculted measures to the dataframe
         filt_period_df = filt_period_df._append(gp_amt_row, ignore_index=True)
         filt_period_df = filt_period_df._append(gp_pct_row, ignore_index=True)
         filt_period_df = filt_period_df._append(np_amt_row, ignore_index=True)
         filt_period_df = filt_period_df._append(np_pct_row, ignore_index=True)
-        # for each period now df_report has calculated measures (i.e NP/GP) , Group totals and Line totals
         df_report = pd.concat([df_report, filt_period_df])
 
     df_report = pd.pivot_table(data=df_report, index=[
@@ -536,10 +507,10 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
             }
         ])
     )
-    # Creates a one column dataframe which has all the Profit and lost line items as rows. 
+
     first_level = pd.DataFrame(
         {'Description': [i for i in pl_sort_order.keys()]})
-    #These will be the list of columns in the profit and loss report 
+
     column_list = ['CY CM', 'CY CM BUD', 'PY CM',
                    'CY PM', 'CY YTD', 'CY YTD BUD', 'PY YTD']
 
@@ -573,7 +544,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         period_df = datasource.loc[df_filter, ['first_level', 'net']]
         period_df = period_df.groupby(
             by=['first_level'], as_index=False)['net'].sum()
-        npr = period_df['net'].sum()
+        np = period_df['net'].sum()
         trd_level = pd.merge(left=period_df, right=df_first_level_group[[
                              'first_level', 'third_level']], on='first_level', how='left')
         trd_level = trd_level.groupby(
@@ -589,7 +560,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
 
         try:
             gp_pct = gp / revenue * 100
-            np_pct = npr / revenue * 100
+            np_pct = np / revenue * 100
         except ZeroDivisionError:
             gp_pct = 0
             np_pct = 0
@@ -599,7 +570,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         gp_pct_row = {
             'Description': 'Gross Proft / Loss %', f'{i}': gp_pct}
         np_amt_row = {
-            'Description': 'Net Profit / Loss', f'{i}': npr}
+            'Description': 'Net Profit / Loss', f'{i}': np}
         np_pct_row = {
             'Description': 'Net Profit / Loss %', f'{i}': np_pct}
         period_df = period_df._append(gp_amt_row, ignore_index=True)

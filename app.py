@@ -3,13 +3,13 @@ import dash_auth
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from dash import html, dcc
-from datetime import datetime as dt
-from data_source import company_info, db_info, USER_MAPPING
+from data import company_info, db_info,USER_MAPPING
+from datetime import datetime,date
 from sqlalchemy import create_engine
 import pandas as pd
 
 app = dash.Dash(name=__name__,  external_stylesheets=[
-                dbc.themes.PULSE], use_pages=True, title='Dashboard')
+                dbc.themes.PULSE], use_pages=True,title='Dashboard')
 
 dash_auth.BasicAuth(app, USER_MAPPING)
 
@@ -20,7 +20,7 @@ header_row = dbc.Row(
     id='main-heading'
 )
 
-secondary_row = dbc.Row(
+secondory_row = dbc.Row(
     children=[
         dbc.Col(
             [
@@ -44,16 +44,15 @@ secondary_row = dbc.Row(
                     min_date_allowed=None,
                     max_date_allowed=None,
                     updatemode='bothdates',
-                    start_date=dt(2023, 1, 1).date(),
-                    end_date=dt(2023, 1, 31).date(),  # dt(2023, 8, 31)
+                    start_date=None,
+                    end_date=None,  # dt(2023, 8, 31)
                 )
             ], width={'size': 3},
             style={'margin-top': 2},
         ),
         dbc.Tooltip('The date range need to be first day and last day of any given period',
                     target='dt-pkr-range',
-                    placement='top',
-                    ),
+                    placement='top'),
         dbc.Col(
             [
                 dbc.Nav(
@@ -64,13 +63,21 @@ secondary_row = dbc.Row(
     ]
 )
 
+def check_date_format(date_str):
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S").date()
+    except ValueError:
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            raise ValueError("Invalid date format")
 
 app.layout = html.Div(children=[
     dcc.Store(id='start-date', data={}),
     dcc.Store(id='end-date', data={}),
     dcc.Store(id='database', data={}),
     header_row,
-    secondary_row,
+    secondory_row,
     html.Hr(),
     dash.page_container])
 
@@ -103,16 +110,18 @@ def set_dates(company_db):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{company_db}')
     query = 'SELECT voucher_date FROM "fGL"'
-    df_fgl = pd.read_sql_query(query, engine)
+    df_fGl = pd.read_sql_query(query, engine)
 
-    earliest_date = df_fgl['voucher_date'].min()
-    closest_date = df_fgl['voucher_date'].max()
-
+    earliest_date = df_fGl['voucher_date'].min()
+    closest_date = df_fGl['voucher_date'].max()
+    current_year :str = str(date.today().year)
+    cy_start_date = current_year+'-01-01'
+    cy_start_date = datetime.strptime(cy_start_date,'%Y-%m-%d').date()
 
     return [earliest_date,
             closest_date,
             closest_date,
-            closest_date]
+            cy_start_date]
 
 
 @app.callback(
@@ -125,15 +134,13 @@ def set_dates(company_db):
         Input(component_id='dt-pkr-range', component_property='start_date'),
         Input(component_id='dt-pkr-range', component_property='end_date'),
         Input(component_id='company-name', component_property='value')
-    ], prevent_initial_call=True
+    ],prevent_initial_call = True
 )
 def output_data(start_date, end_date, database):
-    # print(f'issued by app.py start date: {start_date} with format {type(start_date)}')
-    # print(f'issued by app.py end date: {end_date} with format {type(end_date)}')
+    start_date = check_date_format(start_date)
+    end_date = check_date_format(end_date)
 
-    return [start_date, 
-            end_date, 
-            database]
+    return [start_date, end_date, database]
 
 
 if __name__ == '__main__':

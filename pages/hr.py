@@ -8,17 +8,15 @@ from dash.dependencies import Input, Output
 from dash import callback
 import plotly.express as px
 import pandas as pd
-import numpy as np
 from sqlalchemy import create_engine
-from data_source import db_info,check_date_format
+from data import db_info
 from datetime import datetime as dt
 
 
 dash.register_page(__name__, external_stylesheets=[dbc.themes.PULSE])
 
-filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type',
-                 'Nationality': 'nationality', 'Sex': 'sex', 'Maritial Status': 'maritial_state',
-                 'Age Group': 'age_group', 'Service Period': 'service_period'}
+filters_lists = {'Designation': 'designation', 'Department': 'dept', 'Employee Type': 'emp_type', 'Nationality': 'nationality',
+                 'Sex': 'sex', 'Maritial Status': 'maritial_state', 'Age Group': 'age_group', 'Service Period': 'service_period'}
 
 row_one = dbc.Row(
     children=[
@@ -133,17 +131,14 @@ def service_bracket(age):
      Input(component_id='end-date', component_property='data')],
     prevent_initial_call=True
 )
-def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, end_date):
-    # print(f'received by hr.py end date: {end_date} with format {type(end_date)}')
+def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw,end_date):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
 
     df_dEmployee = pd.read_sql('dEmployee', engine, parse_dates=[
                                'dob', 'doj', 'confirmation_date', 'last_increment', 'last_rejoin', 'termination_date'])
-    cy_end_date_init = check_date_format(end_date)
-    cy_end_date = np.datetime64(cy_end_date_init)
-    # cy_end_date = end_date_datetime.strftime("%Y-%m-%d")
-    # cy_end_date = dt.strptime(end_date, '%Y-%m-%d')
+
+    cy_end_date = dt.strptime(end_date, '%Y-%m-%d')
 
     df_dEmployee['age'] = df_dEmployee['dob'].apply(
         lambda x: relativedelta(current_date, x).years)
