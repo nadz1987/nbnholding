@@ -117,7 +117,7 @@ layout = html.Div(
                           html.Hr()],
                 color='#119DFF',
                 type='dot',
-                fullscreen=True)
+                fullscreen=False)
 )
 
 
@@ -177,7 +177,8 @@ def my_func(database, first_dpdw, second_dpdw, first_dpn_dpdw, second_dpn_dpdw, 
         lambda x: relativedelta(current_date, x).years)
     df_demployee['service_period'] = df_demployee['service'].apply(
         service_bracket)
-    existing_emp_filt = (~df_demployee['termination_date'].notna()) | (df_demployee['termination_date'] > current_date)
+    existing_emp_filt = (~df_demployee['termination_date'].notna()) | (
+        df_demployee['termination_date'] > current_date)
 
     df_demployee = df_demployee.loc[existing_emp_filt]
 
@@ -252,16 +253,20 @@ def update_emp_table(database, primary, secondary):
                                                                 (df_demployee['termination_date'] >= start_date)) &
                           (df_demployee[primary].isin(secondary)))
 
-        emp_start: int = len(df_demployee.loc[filt_emp_start]['emp_id'].unique())
+        emp_start: int = len(
+            df_demployee.loc[filt_emp_start]['emp_id'].unique())
 
-        filt_additions = (df_demployee['doj'] >= start_date) & (df_demployee['doj'] <= current_date) & (df_demployee[primary].isin(secondary))
+        filt_additions = (df_demployee['doj'] >= start_date) & (
+            df_demployee['doj'] <= current_date) & (df_demployee[primary].isin(secondary))
 
-        emp_additions: int = len(df_demployee.loc[filt_additions]['emp_id'].unique())
+        emp_additions: int = len(
+            df_demployee.loc[filt_additions]['emp_id'].unique())
 
         filt_terminations = (df_demployee['termination_date'] >= start_date) & (
-                df_demployee['termination_date'] <= current_date) & (df_demployee[primary].isin(secondary))
+            df_demployee['termination_date'] <= current_date) & (df_demployee[primary].isin(secondary))
 
-        emp_terminations: int = len(df_demployee.loc[filt_terminations]['emp_id'].unique())
+        emp_terminations: int = len(
+            df_demployee.loc[filt_terminations]['emp_id'].unique())
 
         emp_movement_data = pd.DataFrame(
             {
@@ -272,6 +277,7 @@ def update_emp_table(database, primary, secondary):
             }
         )
 
-        emp_movement = dbc.Table.from_dataframe(emp_movement_data, striped=True, bordered=True, hover=True)
+        emp_movement = dbc.Table.from_dataframe(
+            emp_movement_data, striped=True, bordered=True, hover=True)
 
         return emp_movement
