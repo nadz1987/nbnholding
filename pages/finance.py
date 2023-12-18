@@ -197,6 +197,7 @@ first_level = pd.DataFrame(
         Output(component_id='pl_results', component_property='children'),
         Output(component_id='monthly-pl', component_property='columns'),
         Output(component_id='monthly-pl', component_property='data'),
+        Output(component_id='explanations', component_property='children'),
 
     ],
     [
@@ -554,6 +555,23 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     narration_df = narration_df[narration_df['narration'].notna()]
     narration_df.sort_values(by='ledger_name', inplace=True)
 
+    narrations = dash_table.DataTable(
+        columns=[{'name': 'Account Name', 'id': 'ledger_name', 'deletable': False, 'selectable': True, 'type': 'text'},
+                 {'name': 'Narration', 'id': 'narration',
+                     'deletable': False, 'selectable': True, 'type': 'text'},
+                 {'name': 'Amount', 'id': 'net', 'deletable': False, 'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}}],
+        data=narration_df.to_dict('records'),
+        id='narrations-tbl',
+        style_cell=dict(textAlign='left'),
+        style_table={'fontSize': 10,
+                     'height': '100px', 'overflowY': 'scroll'},
+        style_header=dict(backgroundColor="paleturquoise",
+                          fontWeight='bold', border='1px solid black'),
+        style_data=dict(backgroundColor="lavender"),
+        fixed_rows={'headers': True, 'data': 0},
+        active_cell=initial_active_cell,
+    )
+
     column_list = ['CY CM', 'CY CM BUD', 'PY CM',
                    'CY PM', 'CY YTD', 'CY YTD BUD', 'PY YTD']
 
@@ -735,5 +753,6 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
               'format': {'specifier': ',.0f'}} if i not in ['first_level'] else {"name": months[i], "id": i, "deletable": True, "selectable": True, 'type': 'text'}
              for
              i in df_report_cols],  # set the properties for first_level column and other column headers of the df_report.columns
-            df_report.to_dict(orient='records')
+            df_report.to_dict(orient='records'),
+            narrations
             ]
