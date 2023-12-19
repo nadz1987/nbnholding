@@ -20,13 +20,13 @@ def check_date_format(date_str):
 def create_narration(text):
     try:
         x = text.split(sep=' ')
-        # Captures the first instance where text starts starts with '|'
+        # Captures the first instance where text starts with '|'
         start_point = x.index([i for i in x if i.startswith('|')][0])
         # Captures the first instance where text ends starts with '|'
         end_point = x.index([j for j in x if j.endswith('|')][0]) + 1
         return ' '.join(x[start_point:end_point]).title().replace('|', '')
     except (IndexError, AttributeError):
-        # to handle sitituation wherer narration text does not start with / ends with '|' or
+        # to handle situation where narration text does not start with / ends with '|' or
         # does not have '|' at all
         return None
 
@@ -225,7 +225,7 @@ USER_MAPPING = {'njayathunga@nbn.qa': '123',
                 'nsaleem@nbn.qa': '5i0Wa_ok',
                 'amohan@nbn.qa': '@ePRUs1P',
                 'mabdelkarem@nbn.qa': 'p_Ls3ok#',
-                'skhazi@nbn.qa': 's_0ZU8Lt',
+                'aghulam@nbn.qa': 's_0ZU8Lt',
                 'maziz@nbn.qa': 'bUc!1p3t',
                 'adiab@nbn.qa': 'bUc!1p3t',
                 'gdemaiche@nbn.qa': 'bUc!1p3t',

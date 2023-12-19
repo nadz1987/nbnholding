@@ -16,167 +16,181 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 dash.register_page(__name__,
                    path='/', external_stylesheets=[dbc.themes.PULSE, dbc.icons.BOOTSTRAP])
 
-row_one = dbc.Row(
-    children=[
-        dbc.Col(
-            [
-                dcc.Dropdown(
-                    options=[
-                        {'label': key, 'value': value} for key, value in time_series_data.items()
-                    ],
-                    value='current_month',
-                    id='time-series-fin',
-                    className='mt-1',
-                    optionHeight=35,
-                    clearable=False
-                )
-            ], width={'size': 2}
-
-        ),
-        dbc.Col(
-            children=[
-                html.Div(
-                    children=[], id='financial-matrics'
-                )
-            ], width={'size': 10}
-        )
-    ]
-)
-
-row_two = dbc.Row(
-    children=[
-        dbc.Col(
-            children=[
-                html.H5('CATEGORY-WISE REVENUE',
-                        className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-rev', figure={})
-            ], width={'size': 8}
-        ),
-        dbc.Col(
-            children=[
-                html.H5('YTD', className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-rev-ytd', figure={})
-            ], width={'size': 4}
-        )
-    ]
-)
-
-row_three = dbc.Row(
-    children=[
-        dbc.Col(
-            children=[
-                html.H5('CATEGORY-WISE GROSS PROFIT',
-                        className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-gp', figure={})
-            ], width={'size': 8}
-        ),
-        dbc.Col(
-            children=[
-                html.H5('YTD', className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-gp-ytd', figure={})
-            ], width={'size': 4}
-        )
-    ]
-)
-
-row_four = dbc.Row(
-    children=[
-        dbc.Col(
-            children=[
-                html.H5('CATEGORY-WISE OVERHEAD',
-                        className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-oh', figure={})
-            ], width={'size': 8}
-        ),
-        dbc.Col(
-            children=[
-                html.H5('YTD', className='text-center text-primary mb-4'),
-                dcc.Graph(id='cat-oh-ytd', figure={})
-            ], width={'size': 4}
-        )
-    ]
-)
 initial_active_cell = {'row': 0, 'column': 1,
                        'column_id': '01', 'row_id': 0}
-row_five = dbc.Row(
+
+
+pl_tab_content = html.Div(
     children=[
-        dbc.Col(
+        dbc.Row(
             children=[
-                html.H5('MAIN INDEXES', className='text-center text-primary mb-4'),
-                dcc.Graph(id='main_index', figure={})
-            ], width={'size': 6}
-        ),
-        dbc.Col(
-            children=[
-                html.H5('SUMMARY', className='text-center text-primary mb-4'),
-                dash_table.DataTable(
-                    id='monthly-pl',
-                    style_cell=dict(textAlign='left'),
-                    style_table={'fontSize': 10,
-                                 'height': '500px', 'overflowY': 'scroll'},
-                    style_header=dict(backgroundColor="paleturquoise",
-                                      fontWeight='bold', border='1px solid black'),
-                    style_data=dict(backgroundColor="lavender"),
-                    fixed_rows={'headers': True, 'data': 0},
-                    active_cell=initial_active_cell,
-                    style_data_conditional=([
-                        {
-                            'if': {'column_id': 'Total'},
-                            'fontWeight': 'bold',
-                            'textAlign': 'right',
-                        },
-                        {
-                            'if':
-                                {'filter_query': '{first_level} contains "Total"'},
-                            'fontWeight': 'bold',
-                            'border': '1px solid black'
-                        },
-                        {
-                            'if':
-                                {'filter_query': '{first_level} contains "Cost of Sales" || {first_level} contains "Direct Income" || {first_level} contains "Finance Cost" \
-                 || {first_level} contains "Overhead" || {first_level} contains "Indirect Income"'},
-                            'fontWeight': 'bold',
-                            'border-top': '1px solid black'
-                        }
-                    ])
+                dbc.Col(
+                    [
+                        dcc.Dropdown(
+                            options=[
+                                {'label': key, 'value': value} for key, value in time_series_data.items()
+                            ],
+                            value='current_month',
+                            id='time-series-fin',
+                            className='mt-1',
+                            optionHeight=35,
+                            clearable=False
+                        )
+                    ], width={'size': 2}
+
+                ),
+                dbc.Col(
+                    children=[
+                        html.Div(
+                            children=[], id='financial-matrics'
+                        )
+                    ], width={'size': 10}
                 )
-            ], width={'size': 6}
+            ]
+        ), dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H5('CATEGORY-WISE REVENUE',
+                                className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-rev', figure={})
+                    ], width={'size': 8}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H5('YTD', className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-rev-ytd', figure={})
+                    ], width={'size': 4}
+                )
+            ]
+        ), dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H5('CATEGORY-WISE GROSS PROFIT',
+                                className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-gp', figure={})
+                    ], width={'size': 8}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H5('YTD', className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-gp-ytd', figure={})
+                    ], width={'size': 4}
+                )
+            ]
+        ), dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H5('CATEGORY-WISE OVERHEAD',
+                                className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-oh', figure={})
+                    ], width={'size': 8}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H5('YTD', className='text-center text-primary mb-4'),
+                        dcc.Graph(id='cat-oh-ytd', figure={})
+                    ], width={'size': 4}
+                )
+            ]
+        ), dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H5('MAIN INDEXES',
+                                className='text-center text-primary mb-4'),
+                        dcc.Graph(id='main_index', figure={})
+                    ], width={'size': 6}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H5(
+                            'SUMMARY', className='text-center text-primary mb-4'),
+                        dash_table.DataTable(
+                            id='monthly-pl',
+                            style_cell=dict(textAlign='left'),
+                            style_table={'fontSize': 10,
+                                         'height': '500px', 'overflowY': 'scroll'},
+                            style_header=dict(backgroundColor="paleturquoise",
+                                              fontWeight='bold', border='1px solid black'),
+                            style_data=dict(backgroundColor="lavender"),
+                            fixed_rows={'headers': True, 'data': 0},
+                            active_cell=initial_active_cell,
+                            style_data_conditional=([
+                                {
+                                    'if': {'column_id': 'Total'},
+                                    'fontWeight': 'bold',
+                                    'textAlign': 'right',
+                                },
+                                {
+                                    'if':
+                                    {'filter_query': '{first_level} contains "Total"'},
+                                    'fontWeight': 'bold',
+                                    'border': '1px solid black'
+                                },
+                                {
+                                    'if':
+                                    {'filter_query': '{first_level} contains "Cost of Sales" || {first_level} contains "Direct Income" || {first_level} contains "Finance Cost" \
+                 || {first_level} contains "Overhead" || {first_level} contains "Indirect Income"'},
+                                    'fontWeight': 'bold',
+                                    'border-top': '1px solid black'
+                                }
+                            ])
+                        )
+                    ], width={'size': 6}
+                )
+            ]
+        ), dbc.Row(
+            children=[
+                html.H6('Reasons for variance:',
+                        className='text-start text-primary mb-4'),
+                html.Div(
+                    children=[], id='explanations'
+                )
+            ]
+        ), dbc.Row(
+            children=[
+                html.H5('PROFIT / (LOSS) RESULTS',
+                        className='text-center text-primary mb-4'),
+                html.Div(
+                    children=[], id='pl_results')
+            ]
         )
+
     ]
 )
-row_six = dbc.Row(
+bs_tab_content = html.Div(
     children=[
-        html.H6('Reasons for variance:',
-                className='text-start text-primary mb-4'),
-        html.Div(
-            children=[], id='explanations'
-        )
+
     ]
 )
 
-row_seven = dbc.Row(
+cf_tab_content = html.Div(
     children=[
-        html.H5('PROFIT / (LOSS) RESULTS',
-                className='text-center text-primary mb-4'),
-        html.Div(
-            children=[], id='pl_results')
+
+    ]
+)
+
+ci_tab_content = html.Div(
+    children=[
+
+    ]
+)
+
+tabs = dbc.Tabs(
+    [
+        dbc.Tab(pl_tab_content, label="Profit/(Loss)"),
+        dbc.Tab(bs_tab_content, label="Balance Sheet"),
+        dbc.Tab(cf_tab_content, label="Cash Flow"),
+        dbc.Tab(ci_tab_content, label="Change in Equity")
     ]
 )
 
 layout = html.Div(
-    dcc.Loading(children=[row_one,
-                          html.Hr(),
-                          row_two,
-                          html.Hr(),
-                          row_three,
-                          html.Hr(),
-                          row_four,
-                          html.Hr(),
-                          row_five,
-                          html.Hr(),
-                          row_six,
-                          html.Hr(),
-                          row_seven], color='#119DFF', type='graph', fullscreen=True)
+    dcc.Loading(children=[tabs],
+                color='#119DFF', type='graph', fullscreen=True)
 )
 
 first_level = pd.DataFrame(
