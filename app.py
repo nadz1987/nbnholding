@@ -45,7 +45,8 @@ secondary_row = dbc.Row(
                     max_date_allowed=None,
                     updatemode='bothdates',
                     start_date=None,
-                    end_date=None,  # dt(2023, 8, 31)
+                    end_date=None,  # dt(2023, 8, 31),
+                    disabled=False,
                 )
             ], width={'size': 3},
             style={'margin-top': 2},

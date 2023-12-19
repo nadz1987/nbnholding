@@ -1,11 +1,13 @@
 import dash
 import dash_bootstrap_components as dbc
-from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, create_narration, related_parties
+from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, \
+    create_narration, related_parties
 from dash import dcc, html, callback, Output, Input, dash_table
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import create_engine
 from datetime import datetime as dt
+from datetime import date
 from datetime import timedelta
 import plotly.express as px
 import warnings
@@ -18,7 +20,6 @@ dash.register_page(__name__,
 
 initial_active_cell = {'row': 0, 'column': 1,
                        'column_id': '01', 'row_id': 0}
-
 
 pl_tab_content = html.Div(
     children=[
@@ -126,13 +127,13 @@ pl_tab_content = html.Div(
                                 },
                                 {
                                     'if':
-                                    {'filter_query': '{first_level} contains "Total"'},
+                                        {'filter_query': '{first_level} contains "Total"'},
                                     'fontWeight': 'bold',
                                     'border': '1px solid black'
                                 },
                                 {
                                     'if':
-                                    {'filter_query': '{first_level} contains "Cost of Sales" || {first_level} contains "Direct Income" || {first_level} contains "Finance Cost" \
+                                        {'filter_query': '{first_level} contains "Cost of Sales" || {first_level} contains "Direct Income" || {first_level} contains "Finance Cost" \
                  || {first_level} contains "Overhead" || {first_level} contains "Indirect Income"'},
                                     'fontWeight': 'bold',
                                     'border-top': '1px solid black'
@@ -163,17 +164,173 @@ pl_tab_content = html.Div(
 )
 bs_tab_content = html.Div(
     children=[
+        dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H6('Balance Sheet as of : ')
+                    ], width={'size': 2}
+                ),
+                dbc.Col(
+                    dcc.DatePickerSingle(
+                        id='bs-date-picker',
+                        date=dt.now().date(),
+                        min_date_allowed=date(2020, 12, 31),
+                        max_date_allowed=dt.now()
+                    ), width={'size': 2}
+                ),
+                dbc.Col(
+                    width={'size': 8}
+                )
+            ]
+        ),
+        dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H6('Key Ratios', className="text-center"),
+                        html.Hr(),
+                        dbc.CardGroup(
+                            [
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
 
+                                            dbc.CardHeader('Working Capital', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
+
+                                        ], className='border-start border-5 border-danger'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Debt-to-Equity', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-warning'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Current Ratio', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-success'
+                                    )
+                                )
+                            ]
+                        ),
+                        html.Hr(),
+                        dbc.CardGroup(
+                            [
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Days Sales Outstanding', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
+
+                                        ], className='border-start border-5 border-warning'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Days Payable Outstanding', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-success'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Cash Conversion Ratio', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-success'
+                                    )
+                                )
+                            ]
+                        ),
+                        html.Hr(),
+                        dbc.CardGroup(
+                            [
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('Asset Turnover Ratio', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
+
+                                        ], className='border-start border-5 border-danger'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('That Other Ratio', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-warning'
+                                    )
+                                ),
+                                dbc.Card(
+                                    html.Div(
+                                        children=[
+
+                                            dbc.CardHeader('That Other Ratio', className="text-center fw-bold"),
+                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
+
+                                        ], className='border-start border-5 border-warning'
+                                    )
+                                )
+                            ]
+                        ),
+
+                    ], width={'size': 4}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H6('Balance Sheet', className="text-center")
+                    ], width={'size': 8}
+                )
+            ]
+        ),
+        html.Hr(),
+        dbc.Row(
+            children=[
+                dbc.Col(
+                    children=[
+                        html.H6('Total Assets', className="text-center"),
+                        dcc.Graph(id='ta-pie', figure={})
+                    ], width={'size': 6}
+                ),
+                dbc.Col(
+                    children=[
+                        html.H6('Total Liabilities', className="text-center"),
+                        dcc.Graph(id='tl-pie', figure={})
+                    ], width={'size': 6}
+                )
+            ]
+        )
     ]
 )
 cf_tab_content = html.Div(
     children=[
-html.H1('Coming Soon')
+        html.H1('Coming Soon')
     ]
 )
 ci_tab_content = html.Div(
     children=[
-html.H1('Coming Soon')
+        html.H1('Coming Soon')
     ]
 )
 
@@ -217,11 +374,12 @@ first_level = pd.DataFrame(
         Input(component_id='end-date', component_property='data'),
         Input(component_id='database', component_property='data'),
         Input(component_id='time-series-fin', component_property='value'),
-        Input(component_id='monthly-pl', component_property='active_cell')
+        Input(component_id='monthly-pl', component_property='active_cell'),
+        Input(component_id='bs-date-picker', component_property='date')
     ],
     prevent_initial_call=True
 )
-def data_output(start_date, end_date, database, time_freq, active_cell):
+def data_output(start_date, end_date, database, time_freq, active_cell, bs_date):
     engine = create_engine(
         f'postgresql://{db_info["USERNAME"]}:{db_info["PWD"]}@{db_info["HOSTNAME"]}:{db_info["PORT_ID"]}/{database}')
     df_dCoAAdler = pd.read_sql('dCoAAdler', engine)
@@ -232,9 +390,9 @@ def data_output(start_date, end_date, database, time_freq, active_cell):
     df_fGl_combined = pd.merge(
         left=df_fGl, right=df_dCoAAdler, on='ledger_code', how='left')
     df_fGl_combined['net'] = df_fGl_combined['credit'] - \
-        df_fGl_combined['debit']  # Revenue will be positive and Expenses will be in negative.
-    df_budget = pd.read_sql('fBudget', engine)
+                             df_fGl_combined['debit']  # Revenue will be positive and Expenses will be in negative.
 
+    df_budget = pd.read_sql('fBudget', engine)
     # start_date coming from app.py [DatepickerRange] format like 2023-04-07 i.e 2023-07-01
     cm_begin_date = dt.strptime(start_date, '%Y-%m-%d')
     cm_end_date = dt.strptime(end_date, '%Y-%m-%d')  # 2023-07-31
@@ -288,11 +446,11 @@ def data_output(start_date, end_date, database, time_freq, active_cell):
 
     for matric in fin_tiles_values:  # matrics are GP/NP/EBITDA/REV etc...
         filt_current = (df_fGl_combined['voucher_date'] >= st_date) & (
-            df_fGl_combined['voucher_date'] <= en_date) & (df_fGl_combined['first_level'].isin(
-                matric['filt']))  # 'filt' has a list of first_level account groups to get the required matric
+                df_fGl_combined['voucher_date'] <= en_date) & (df_fGl_combined['first_level'].isin(
+            matric['filt']))  # 'filt' has a list of first_level account groups to get the required matric
         filt_comparative = (df_fGl_combined['voucher_date'] >= comparative_start) & (
-            df_fGl_combined['voucher_date'] <= comparative_end) & (
-            df_fGl_combined['first_level'].isin(matric['filt']))
+                df_fGl_combined['voucher_date'] <= comparative_end) & (
+                               df_fGl_combined['first_level'].isin(matric['filt']))
         # for each loop create an empty copy of the tile structure
         new_tile_data = tile_data_value.copy()
         new_tile_data['matric'] = matric['value']  # i.e Revenue/GP/NP etc..
@@ -307,9 +465,9 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         )  # comparative period sum of the selected matric i.e Revenue/GP
         try:
             new_tile_data['change']: float = (
-                new_tile_data['value'] - new_tile_data['comparative']) / \
-                new_tile_data[
-                'comparative'] * 100  # Percentage change from previous to current period
+                                                     new_tile_data['value'] - new_tile_data['comparative']) / \
+                                             new_tile_data[
+                                                 'comparative'] * 100  # Percentage change from previous to current period
         except ZeroDivisionError:
             new_tile_data['change']: float = 0
 
@@ -337,7 +495,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
                 html.Hr(),
                 html.H4(f'QR: {i["value"]:,.0f}'),  # Current period value
                 html.H5
-                (
+                    (
                     [
                         # percentage change from previous period to current period
                         f"{round(i['change'], 2)} %",
@@ -361,8 +519,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         ]
 
     filt_rev = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
-            values=[i['filt'] for i in fin_tiles_values if i['value'] == 'Revenue'][0]))  # 2023-01-01 to 2023-07-31
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
+        values=[i['filt'] for i in fin_tiles_values if i['value'] == 'Revenue'][0]))  # 2023-01-01 to 2023-07-31
     df_ref = df_fGl_combined.loc[filt_rev, ['period', 'ledger_name', 'net']]
     revenue_df = df_ref.groupby(by=['period', 'ledger_name'],
                                 as_index=False)['net'].sum()
@@ -395,8 +553,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         labels=[graph_legends[label] for label in pie_chart_rev_ytd_cat.data[0]['labels']])
 
     filt_gp = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (
-        df_fGl_combined['first_level'].isin([i['filt'] for i in fin_tiles_values if i['value'] == 'GP'][0]))
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (
+                  df_fGl_combined['first_level'].isin([i['filt'] for i in fin_tiles_values if i['value'] == 'GP'][0]))
     rev_cat = [i['data'].get(
         'rev_cat') for i in company_info if i['data']['database'] == database][
         0]  # to get the revenue categories listed in company_info dictionery
@@ -430,8 +588,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     )
 
     filt_oh = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
-            [i['filt'] for i in fin_tiles_values if i['value'] == 'Overhead'][0]))
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
+        [i['filt'] for i in fin_tiles_values if i['value'] == 'Overhead'][0]))
     df_overhead = df_fGl_combined.loc[filt_oh, [
         'period', 'net', 'first_level']]
     df_overhead['net'] = df_overhead['net'] * -1
@@ -476,8 +634,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
                                    )
 
     filt_np = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (
-        df_fGl_combined['first_level'].isin([i['filt'] for i in fin_tiles_values if i['value'] == 'NP'][0]))
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (
+                  df_fGl_combined['first_level'].isin([i['filt'] for i in fin_tiles_values if i['value'] == 'NP'][0]))
     df_np = df_fGl_combined.loc[filt_np, ['period', 'net', 'first_level']]
 
     np_line = df_np.groupby(by=['period'], as_index=False)['net'].sum()
@@ -487,8 +645,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
                                    name='Net Profit'
                                    )
     filt_ebitda = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
-            [i['filt'] for i in fin_tiles_values if i['value'] == 'EBITDA'][0]))
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'].isin(
+        [i['filt'] for i in fin_tiles_values if i['value'] == 'EBITDA'][0]))
     df_ebitda = df_fGl_combined.loc[filt_ebitda, ['period', 'net']]
 
     ebitda_line = df_ebitda.groupby(by=['period'], as_index=False)['net'].sum()
@@ -558,7 +716,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     col = active_cell['column_id']
 
     narration_filter = (df_fGl_combined['voucher_date'] >= cy_begin_date) & (
-        df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'] == first_level_header) & (df_fGl_combined['period'] == col)
+            df_fGl_combined['voucher_date'] <= cm_end_date) & (df_fGl_combined['first_level'] == first_level_header) & (
+                               df_fGl_combined['period'] == col)
 
     narration_df = df_fGl_combined.loc[narration_filter, [
         'ledger_name', 'narration', 'net']]
@@ -570,8 +729,9 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     narrations = dash_table.DataTable(
         columns=[{'name': 'Account Name', 'id': 'ledger_name', 'deletable': False, 'selectable': True, 'type': 'text'},
                  {'name': 'Narration', 'id': 'narration',
-                     'deletable': False, 'selectable': True, 'type': 'text'},
-                 {'name': 'Amount', 'id': 'net', 'deletable': False, 'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}}],
+                  'deletable': False, 'selectable': True, 'type': 'text'},
+                 {'name': 'Amount', 'id': 'net', 'deletable': False, 'selectable': True, 'type': 'numeric',
+                  'format': {'specifier': ',.0f'}}],
         data=narration_df.to_dict('records'),
         id='narrations-tbl',
         style_cell=dict(textAlign='left'),
@@ -695,22 +855,22 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
                           fontWeight='bold', border='1px solid black'),
         style_data=dict(backgroundColor="lavender"),
         style_cell_conditional=(
-            [
-                {
-                    'if': {'column_id': 'Description'},
-                    'width': '30px'
-                },
-                {
-                    'if': {'column_id': ' '},
-                    'width': '75px'
-                }
-            ] +
-            [
-                {
-                    'if': {'column_id': k},
-                    'width': '30px'
-                } for k in ['CY CM', 'CY CM BUD', 'PY CM', 'CY PM', 'CY YTD', 'CY YTD BUD', 'PY YTD']
-            ]
+                [
+                    {
+                        'if': {'column_id': 'Description'},
+                        'width': '30px'
+                    },
+                    {
+                        'if': {'column_id': ' '},
+                        'width': '75px'
+                    }
+                ] +
+                [
+                    {
+                        'if': {'column_id': k},
+                        'width': '30px'
+                    } for k in ['CY CM', 'CY CM BUD', 'PY CM', 'CY PM', 'CY YTD', 'CY YTD BUD', 'PY YTD']
+                ]
         ),
         fixed_rows={'headers': True, 'data': 0},
         tooltip_data=[
@@ -751,6 +911,20 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
 
     )
 
+    ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################################################################
+
+    bs_date = dt.strptime(bs_date, '%Y-%m-%d')
+
+    rp_filt = (df_fGl_combined['ledger_name'].isin([i for j in related_parties.values() for i in j])) & (
+            df_fGl_combined['voucher_date'] <= bs_date)
+    df_rp = df_fGl_combined.loc[rp_filt, ['ledger_name', 'net']]
+
+    df_rp['ledger_name'] = df_rp['ledger_name'].apply(
+        lambda ledger_name: [i for i, j in related_parties.items() if ledger_name in j][0])
+    df_rp = df_rp.groupby(by=['ledger_name'], as_index=False)['net'].sum()
+    rpr: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()
+    rpp: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()
+
     return [card_layout,
             bar_chart_rev_monthwise_cat,
             pie_chart_rev_ytd_cat,
@@ -762,9 +936,12 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
             pl_results,
             [{"name": months[i],
               "id": i, "deletable": True, "selectable": True, 'type': 'numeric',
-              'format': {'specifier': ',.0f'}} if i not in ['first_level'] else {"name": months[i], "id": i, "deletable": True, "selectable": True, 'type': 'text'}
+              'format': {'specifier': ',.0f'}} if i not in ['first_level'] else {"name": months[i], "id": i,
+                                                                                 "deletable": True, "selectable": True,
+                                                                                 'type': 'text'}
              for
-             i in df_report_cols],  # set the properties for first_level column and other column headers of the df_report.columns
+             i in df_report_cols],
+            # set the properties for first_level column and other column headers of the df_report.columns
             df_report.to_dict(orient='records'),
             narrations
             ]
