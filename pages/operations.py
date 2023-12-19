@@ -6,6 +6,6 @@ dash.register_page(__name__,external_stylesheets=[dbc.themes.PULSE])
 
 layout = html.Div(
     [
-        dcc.Markdown('# This is Operations Page')
+        dcc.Markdown('# This is Operations Page : COMING SOON!!')
     ]
 )

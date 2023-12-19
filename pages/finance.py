@@ -1,6 +1,6 @@
 import dash
 import dash_bootstrap_components as dbc
-from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, create_narration
+from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, create_narration, related_parties
 from dash import dcc, html, callback, Output, Input, dash_table
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -166,16 +166,14 @@ bs_tab_content = html.Div(
 
     ]
 )
-
 cf_tab_content = html.Div(
     children=[
-
+html.H1('Coming Soon')
     ]
 )
-
 ci_tab_content = html.Div(
     children=[
-
+html.H1('Coming Soon')
     ]
 )
 
