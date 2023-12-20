@@ -41,7 +41,9 @@ company_info = [
          'nav_links': ['Finance', 'HR', 'Operations', 'Sales'],
          'constants': {'RP': 1_220, 'HC': 100, 'TRAINING': 500, 'ACCOMODATION': 3_420, 'TRPT': 3_000},
          'voucher_types': {'Sales Invoice': -1, 'Credit Note': -1, 'Journal Entry': 0, 'Project Invoice': 0,
-                           'Contract Invoice': -1, 'Debit Note': -1, 'Receipt': 0, 'SERVICE INVOICE': -1}
+                           'Contract Invoice': -1, 'Debit Note': -1, 'Receipt': 0, 'SERVICE INVOICE': -1},
+         'elimination_ledgers': ['Refundable Deposits', 'Advance to Suppliers - PDC', 'PDC Payables',
+                                 'Other Payable - Security Cheques']
      }
      },
     {'cid': '2',
@@ -291,22 +293,29 @@ pl_sort_order = {'Manpower Revenue': 1,
                  'Net Profit / Loss %': 32
                  }
 
-bs_sort_order = {'Property, Plant  & Equipment',
-                 'Intangible Assets',
-                 'Right of use Asset'
-                 'Cash & Cash Equivalents',
-                 'Trade Receivables',
-                 'Inventory',
-                 'Due from Related Parties',
-                 'Other Receivable',
-                 'Share Capital',
-                 'Retained Earnings',
-                 'Partners Current Accounts',
-                 'Provisions',
-                 'Lease Liabilities',
-                 'Accounts Payables',
-                 'Due to Related Parties',
-                 'Accruals & Other Payables'}
+bs_sort_order = {'Property, Plant  & Equipment': 1,
+                 'Intangible Assets': 2,
+                 'Right of use Asset': 3,
+                 'Non Current Assets': 4,
+                 'Cash & Cash Equivalents': 5,
+                 'Trade Receivables': 6,
+                 'Inventory': 7,
+                 'Due from Related Parties': 8,
+                 'Other Receivable': 9,
+                 'Current Assets': 10,
+                 'Assets': 11,
+                 'Share Capital': 12,
+                 'Statutory Reserves': 13,
+                 'Retained Earning': 14,
+                 'Equity': 15,
+                 'Provisions': 16,
+                 'Lease Liabilities': 17,
+                 'Non Current Liabilities': 18,
+                 'Accounts Payables': 19,
+                 'Accruals & Other Payables': 20,
+                 'Due to Related Parties': 21,
+                 'Current Liabilities': 22,
+                 'Liability & Equity': 23}
 
 job_type_exclusions = {'Manpower - Employee Benefits': ['not_joined', 'discharged'],
                        'exclude_list_ot': ['AC-ACCOMODATION', 'Annual Leave', 'Bereavement leave- Local',

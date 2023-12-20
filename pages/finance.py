@@ -1,7 +1,7 @@
 import dash
 import dash_bootstrap_components as dbc
 from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, \
-    create_narration, related_parties
+    create_narration, related_parties, bs_sort_order
 from dash import dcc, html, callback, Output, Input, dash_table
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -276,7 +276,7 @@ bs_tab_content = html.Div(
                                     html.Div(
                                         children=[
 
-                                            dbc.CardHeader('That Other Ratio', className="text-center fw-bold"),
+                                            dbc.CardHeader('Return on Equity', className="text-center fw-bold"),
                                             dbc.CardBody([html.H4('2.5x', className="text-center")])
 
                                         ], className='border-start border-5 border-warning'
@@ -299,7 +299,10 @@ bs_tab_content = html.Div(
                 ),
                 dbc.Col(
                     children=[
-                        html.H6('Balance Sheet', className="text-center")
+                        html.H6(children=[], className="text-center", id='bs-date'),
+                        html.Div(
+                            children=[], id='balance-sheet'
+                        )
                     ], width={'size': 8}
                 )
             ]
@@ -367,6 +370,8 @@ first_level = pd.DataFrame(
         Output(component_id='monthly-pl', component_property='columns'),
         Output(component_id='monthly-pl', component_property='data'),
         Output(component_id='explanations', component_property='children'),
+        Output(component_id='balance-sheet', component_property='children'),
+        Output(component_id='bs-date', component_property='children')
 
     ],
     [
@@ -913,17 +918,156 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
 
     ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################################################################
 
-    bs_date = dt.strptime(bs_date, '%Y-%m-%d')
+    bs_date = dt.strptime(bs_date, '%Y-%m-%d')  # this is the current date by default
+    bs_date_py = bs_date - relativedelta(years=1)
 
-    rp_filt = (df_fGl_combined['ledger_name'].isin([i for j in related_parties.values() for i in j])) & (
-            df_fGl_combined['voucher_date'] <= bs_date)
-    df_rp = df_fGl_combined.loc[rp_filt, ['ledger_name', 'net']]
+    bs_combined = pd.DataFrame({'second_level': [], 'net': [], 'as_of': []})
+    for fy in [bs_date_py, bs_date]:  # as we need as of current date and period one year ago
+        # initializing the exclude ledgers list - currently this list contains inter-company receivable/payable ledgers
+        exclude_list = [i for j in related_parties.values() for i in j]
 
-    df_rp['ledger_name'] = df_rp['ledger_name'].apply(
-        lambda ledger_name: [i for i, j in related_parties.items() if ledger_name in j][0])
-    df_rp = df_rp.groupby(by=['ledger_name'], as_index=False)['net'].sum()
-    rpr: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()
-    rpp: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()
+        ##### RULE NUMBER ONE - INTER-COMPANY PAYABLE AND RECEIVABLE ADJUSTMENT #######
+        # we are separating related party receivable and payable balances from the gl. Same related party having more than
+        # one ledger account (Receivable/Payable/ Wrongly created duplicate ledgers will be clubbed together. Total of
+        # positive related party balances will be due from related parties and negative will be due to related parties.
+
+        rp_filt = (df_fGl_combined['ledger_name'].isin(exclude_list)) & (
+                df_fGl_combined[
+                    'voucher_date'] <= fy)  # j returns a list, i assigns such list items to a master list which
+        # consist of all the ledger names of related parties
+        df_rp = df_fGl_combined.loc[rp_filt, ['ledger_name', 'net']]
+
+        df_rp['ledger_name'] = df_rp['ledger_name'].apply(
+            lambda ledger_name: [i for i, j in related_parties.items() if ledger_name in j][
+                0])  # same related party has multiple ledgers i.e for payable and receivable. To get the total for
+        # each related party need to assign a single value to each ledger which mentioned in related parties list.
+        df_rp = df_rp.groupby(by=['ledger_name'], as_index=False)['net'].sum()  # this will group inter-company
+        # ledgers having multiple ledger names
+        rpr: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()  # sum of related-parties which has positive values
+        rpp: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()  # sum of related-parties which has negative values
+
+        ##### RULE NUMBER TWO - NOMINAL LEDGER ACCOUNT ELIMINATION #######
+        # PDC receivable / payable/ security cheque / guarantee cheque account sum total should be zero. Having them
+        # in the second level total will unnecessarily increase the second level total
+
+
+        # below will take all the balance sheet ledger accounts which are not related party receivable or payable.
+        bs_second_level_filt = (~df_fGl_combined['ledger_name'].isin(
+            [i for j in related_parties.values() for i in j])) & (
+                                       df_fGl_combined['voucher_date'] <= fy) & (df_fGl_combined['net'] != 0) & \
+                               df_fGl_combined[
+                                   'forth_level'].isin(['Assets', 'Liabilities', 'Equity'])
+        bs_second_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'second_level']]
+        # this will create a root level table for balance sheet
+        bs_second_level = bs_second_level.groupby(by=['second_level'], as_index=False)['net'].sum()
+        # creating a row for related party payable
+        rpp_row = {
+            'second_level': 'Due to Related Parties', 'net': rpp}
+        bs_second_level = bs_second_level._append(rpp_row, ignore_index=True)
+        # creating a row for related party receivable
+        rpr_row = {
+            'second_level': 'Due from Related Parties', 'net': rpr}
+        bs_second_level = bs_second_level._append(rpr_row, ignore_index=True)
+        # new column in the format of As of 2023-12-20 or As of 2022-12-20 according to loop
+
+        bs_second_level['as_of'] = f'As of {fy.date()}'  # 01
+
+        bs_third_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'third_level']]
+        # this will create a group level table one level above from root level
+        bs_third_level = bs_third_level.groupby(by=['third_level'], as_index=False)['net'].sum()
+
+        pl_period_filt = (df_fGl_combined['forth_level'].isin(['Expenses', ' Expenses'])) & (
+                df_fGl_combined['voucher_date'] <= fy)
+        # this will provide overall profit/loss figure for the period 2021-01-01 till current date
+        pl_period: float = df_fGl_combined.loc[pl_period_filt, 'net'].sum()
+        bs_third_level.set_index('third_level', inplace=True)
+        # below will add whole period pl figure to the opening retained earnings will return retuned earning as of selected date
+        sum_re: float = bs_third_level.loc['Retained Earnings', 'net'] + pl_period
+        # create a new row for retained earnings. There is a difference in Retained Earnings and Retained Earning
+        sum_re_row = {'third_level': 'Retained Earning', 'net': sum_re}
+        bs_third_level.reset_index(inplace=True)
+        # we are appending retained earnings to the third level. Now this table has two retained earnings
+        bs_third_level = bs_third_level._append(sum_re_row, ignore_index=True)
+        bs_third_level.rename(columns={'third_level': 'second_level'},
+                              inplace=True)  # to make this table inline with second_level
+        bs_third_level['as_of'] = f'As of {fy.date()}'  # 02
+
+        bs_forth_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'forth_level']]
+        # this is the final level of grouping
+        bs_forth_level = bs_forth_level.groupby(by=['forth_level'], as_index=False)['net'].sum()
+        bs_forth_level.set_index('forth_level', inplace=True)
+        # this is to create total equity and liability sum figure for the balance sheet
+        sum_e_l: float = bs_forth_level.loc['Equity', 'net'] + bs_forth_level.loc['Liabilities', 'net']
+        bs_forth_level.reset_index(inplace=True)
+        # create a row for equity and total liability
+        sum_e_l_row = {
+            'forth_level': 'Liability & Equity', 'net': sum_e_l}
+        bs_forth_level = bs_forth_level._append(sum_e_l_row, ignore_index=True)
+        bs_forth_level.rename(columns={'forth_level': 'second_level'}, inplace=True)  # to be inline with second_level
+        bs_forth_level['as_of'] = f'As of {fy.date()}'  # 03
+        bs_combined = pd.concat([bs_second_level, bs_third_level, bs_forth_level, bs_combined])
+
+    bs_combined_filt = (~bs_combined['second_level'].isin(
+        ['Retained Earnings', 'Liabilities', 'Statutory Reserve', 'Capital'])) & (
+                               bs_combined[
+                                   'net'] != 0)  # group totals excluded from this filter are already appering in other groupings
+    bs_combined = bs_combined.loc[bs_combined_filt]
+    bs_combined = pd.pivot_table(data=bs_combined, index=[
+        'second_level'], columns='as_of',
+                                 values='net')  # this will pivot from |second_level|net|as_of --> |second_level|As of 2023-12-20|As of 2022-12-20
+    bs_combined['Variance'] = bs_combined[f'As of {bs_date.date()}'] - bs_combined[f'As of {bs_date_py.date()}']
+    try:
+        bs_combined['% Var'] = (bs_combined[f'As of {bs_date.date()}'] / bs_combined[
+            f'As of {bs_date_py.date()}'] - 1) * 100
+    except ZeroDivisionError:  # as in some cases prior year figure may be zero
+        bs_combined['% Var'] = 0
+    # as the initial table does not have CY / PY format
+    bs_combined = bs_combined.reindex(
+        columns=[f'As of {bs_date.date()}', f'As of {bs_date_py.date()}', 'Variance', '% Var'])
+
+    def custom_sort_key_bs(value):
+        return bs_sort_order.get(value, 0)
+
+    # sorting as per the custom sort order
+    bs_combined = bs_combined.sort_values(
+        by='second_level', key=lambda x: x.map(custom_sort_key_bs))
+    # otherwise dataTable will not show the second_level(Description)
+    bs_combined.reset_index(inplace=True)
+
+    balance_sheet = dash_table.DataTable(
+        data=bs_combined.to_dict(orient='records'),
+        columns=[{'name': 'Description', 'id': 'second_level', 'deletable': False, 'selectable': True, 'type': 'text'},
+                 {'name': f'As of {bs_date.date()}', 'id': f'As of {bs_date.date()}', 'deletable': False,
+                  'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
+                 {'name': f'As of {bs_date_py.date()}', 'id': f'As of {bs_date_py.date()}', 'deletable': False,
+                  'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
+                 {'name': 'Variance', 'id': 'Variance', 'deletable': False, 'selectable': True, 'type': 'numeric',
+                  'format': {'specifier': ',.0f'}},
+                 {'name': '% Var', 'id': '% Var', 'deletable': False, 'selectable': True, 'type': 'numeric',
+                  'format': {'specifier': ',.0f'}}, ],
+        id='balance-sheet-tbl',
+        style_cell=dict(textAlign='left'),
+        style_table={'fontSize': 10,
+                     'height': '500px', 'overflowY': 'scroll'},
+        style_header=dict(backgroundColor="paleturquoise",
+                          fontWeight='bold', border='1px solid black'),
+        style_data=dict(backgroundColor="lavender"),
+        fixed_rows={'headers': True, 'data': 0},
+        style_data_conditional=([
+            {
+                'if':
+                    {
+                        'filter_query': '{second_level} eq "Non Current Assets" || {second_level} eq "Current Assets" '
+                                        '|| {second_level} eq "Assets"  || {second_level} eq "Non Current '
+                                        'Liabilities" || {second_level} eq "Current Liabilities" || {second_level} eq '
+                                        '"Liability & Equity" || {second_level} eq "Equity"'},
+                'fontWeight': 'bold',
+                'border-top': '1px solid black'
+            }
+
+        ])
+
+    )
 
     return [card_layout,
             bar_chart_rev_monthwise_cat,
@@ -943,5 +1087,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
              i in df_report_cols],
             # set the properties for first_level column and other column headers of the df_report.columns
             df_report.to_dict(orient='records'),
-            narrations
+            narrations,
+            balance_sheet,
+            f'Balance Sheet As of {bs_date.date()}'
             ]
