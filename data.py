@@ -42,8 +42,6 @@ company_info = [
          'constants': {'RP': 1_220, 'HC': 100, 'TRAINING': 500, 'ACCOMODATION': 3_420, 'TRPT': 3_000},
          'voucher_types': {'Sales Invoice': -1, 'Credit Note': -1, 'Journal Entry': 0, 'Project Invoice': 0,
                            'Contract Invoice': -1, 'Debit Note': -1, 'Receipt': 0, 'SERVICE INVOICE': -1},
-         'elimination_ledgers': ['Refundable Deposits', 'Advance to Suppliers - PDC', 'PDC Payables',
-                                 'Other Payable - Security Cheques']
      }
      },
     {'cid': '2',
@@ -402,3 +400,6 @@ related_parties = {'Auto Class Automobiles W.L.L': ['Auto Class Automobiles', 'A
                    'Nawaf Nasser Al-Thani': ['Private Office'],
                    'SNC Lavalin ProFac Gulf Management W.L.L': ['SNC Lavalin ProFac Gulf Management'],
                    'Ziebart W.L.L': ['Ziebart'], }
+
+elimination_ledgers = ['Refundable Deposits', 'Advance to Suppliers - PDC', 'PDC Payables',
+                       'Other Payable - Security Cheques', 'Refundable Deposits - Security Cheques','PDC Receivable']

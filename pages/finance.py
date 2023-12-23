@@ -1,7 +1,7 @@
 import dash
 import dash_bootstrap_components as dbc
 from data import time_series_data, db_info, fin_tiles_values, company_info, graph_legends, months, pl_sort_order, \
-    create_narration, related_parties, bs_sort_order
+    create_narration, related_parties, bs_sort_order, elimination_ledgers
 from dash import dcc, html, callback, Output, Input, dash_table
 import pandas as pd
 from dateutil.relativedelta import relativedelta
@@ -434,7 +434,8 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
          'comparative_start': py_begin_date,  # 2022-01-01
          'comparative_end': py_end_date}  # 2022-07-31
     ]
-    # to get start_date,end_date, comparative_start and comparative_end values from time_series list upon selection of 'time-series-fin'
+    # to get start_date,end_date, comparative_start and comparative_end values from time_series list upon selection
+    # of 'time-series-fin'
     st_date = \
         [i['start_date']
          # Selection of 'key'-'Current Month' for the 'value' - 'value' in dictioneries in time_series list
@@ -461,11 +462,9 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
         new_tile_data['matric'] = matric['value']  # i.e Revenue/GP/NP etc..
         # current period sum of the selected matric i.e Revenue/GP
         new_tile_data['value']: float = df_fGl_combined.loc[filt_current]['net'].sum()
-        '''
-SELECT SUM("fGL".credit - "fGL".debit) AS net
-FROM "fGL" LEFT JOIN "dCoAAdler" ON "fGL".ledger_code = "dCoAAdler".ledger_code
-WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Projects Revenue', 'Services Revenue') AND "fGL".voucher_date BETWEEN '2023-08-01' AND '2023-08-31';
-        '''
+        '''SELECT SUM("fGL".credit - "fGL".debit) AS net FROM "fGL" LEFT JOIN "dCoAAdler" ON "fGL".ledger_code = 
+        "dCoAAdler".ledger_code WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 
+        'Projects Revenue', 'Services Revenue') AND "fGL".voucher_date BETWEEN '2023-08-01' AND '2023-08-31';'''
         new_tile_data['comparative']: float = df_fGl_combined.loc[filt_comparative]['net'].sum(
         )  # comparative period sum of the selected matric i.e Revenue/GP
         try:
@@ -484,8 +483,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
             new_tile_data['colour'] = 'success'
         else:
             new_tile_data['colour'] = 'danger'
-        # new_tile_data['colour'] = 'danger' if new_tile_data['change'] < 0 else 'success' # red if pct change is negative, else green
-        # up and down arrow
+        # new_tile_data['colour'] = 'danger' if new_tile_data['change'] < 0 else 'success' # red if pct change is
+        # negative, else green up and down arrow
         new_tile_data['icon'] = "bi bi-arrow-down" if new_tile_data['change'] < 0 else "bi bi-arrow-up"
         # append the current instance of loop to a list
         tile_data_value_all.append(new_tile_data)
@@ -907,8 +906,8 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         style_data_conditional=([
             {
                 'if':
-                    {'filter_query': '{Description} contains "Cost of Sales" || {Description} contains "Direct Income" || {Description} contains "Finance Cost" \
-                 || {Description} contains "Overhead" || {Description} contains "Indirect Income"'},
+                    {
+                        'filter_query': '{Description} contains "Cost of Sales" || {Description} contains "Direct Income" || {Description} contains "Finance Cost"  || {Description} contains "Overhead" || {Description} contains "Indirect Income"'},
                 'fontWeight': 'bold',
                 'border-top': '1px solid black'
             }
@@ -916,7 +915,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
 
     )
 
-    ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################################################################
+    ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################
 
     bs_date = dt.strptime(bs_date, '%Y-%m-%d')  # this is the current date by default
     bs_date_py = bs_date - relativedelta(years=1)
@@ -926,10 +925,10 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         # initializing the exclude ledgers list - currently this list contains inter-company receivable/payable ledgers
         exclude_list = [i for j in related_parties.values() for i in j]
 
-        ##### RULE NUMBER ONE - INTER-COMPANY PAYABLE AND RECEIVABLE ADJUSTMENT #######
-        # we are separating related party receivable and payable balances from the gl. Same related party having more than
-        # one ledger account (Receivable/Payable/ Wrongly created duplicate ledgers will be clubbed together. Total of
-        # positive related party balances will be due from related parties and negative will be due to related parties.
+        # #### RULE NUMBER ONE - INTER-COMPANY PAYABLE AND RECEIVABLE ADJUSTMENT ####### we are separating related
+        # party receivable and payable balances from the gl. Same related party having more than one ledger account (
+        # Receivable/Payable/ Wrongly created duplicate ledgers will be clubbed together. Total of positive related
+        # party balances will be due from related parties and negative will be due to related parties.
 
         rp_filt = (df_fGl_combined['ledger_name'].isin(exclude_list)) & (
                 df_fGl_combined[
@@ -943,23 +942,49 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         # each related party need to assign a single value to each ledger which mentioned in related parties list.
         df_rp = df_rp.groupby(by=['ledger_name'], as_index=False)['net'].sum()  # this will group inter-company
         # ledgers having multiple ledger names
-        rpr: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()  # sum of related-parties which has positive values
-        rpp: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()  # sum of related-parties which has negative values
+        rpp: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()  # sum of related-parties which has negative values
+        rpr: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()  # sum of related-parties which has positive values
 
         ##### RULE NUMBER TWO - NOMINAL LEDGER ACCOUNT ELIMINATION #######
         # PDC receivable / payable/ security cheque / guarantee cheque account sum total should be zero. Having them
         # in the second level total will unnecessarily increase the second level total
 
+        elimination_filt = (df_fGl_combined['ledger_name'].isin(elimination_ledgers)) & (
+                df_fGl_combined['voucher_date'] <= fy)
+        elimanated_total: float = df_fGl_combined.loc[elimination_filt, 'net'].sum()  # + if credit balance , - if
+        # debit balance, credit - debit
+        exclude_list = exclude_list + elimination_ledgers
+
+        ##### RULE NUMBER THREE - HANDLING DEBIT/CREDIT BALANCES IN AP/AR  #######
+        ap_filt = (df_fGl_combined['second_level'].isin(['Accounts Payables'])) & (
+            ~df_fGl_combined['ledger_name'].isin(exclude_list)) & (df_fGl_combined['voucher_date'] <= fy)
+        df_dr_ap = df_fGl_combined.loc[ap_filt].groupby(by=['ledger_name'], as_index=False)['net'].sum()
+        dr_ap_list: list = df_dr_ap.loc[df_dr_ap['net'] < 0, 'ledger_name'].tolist()
+        dr_ap_amt: float = df_dr_ap.loc[df_dr_ap['net'] < 0, 'net'].sum()  # return a - figure
+
+        ar_filt = (df_fGl_combined['second_level'].isin(['Trade Receivables'])) & (
+            ~df_fGl_combined['ledger_name'].isin(exclude_list)) & (df_fGl_combined['voucher_date'] <= fy)
+        df_cr_ar = df_fGl_combined.loc[ar_filt].groupby(by=['ledger_name'], as_index=False)['net'].sum()
+        cr_ar_list: list = df_cr_ar.loc[df_cr_ar['net'] > 0, 'ledger_name'].tolist()
+        cr_ar_amt: float = df_cr_ar.loc[df_cr_ar['net'] > 0, 'net'].sum()  # return a + figure
+        exclude_list = exclude_list + dr_ap_list + cr_ar_list
+
 
         # below will take all the balance sheet ledger accounts which are not related party receivable or payable.
-        bs_second_level_filt = (~df_fGl_combined['ledger_name'].isin(
-            [i for j in related_parties.values() for i in j])) & (
-                                       df_fGl_combined['voucher_date'] <= fy) & (df_fGl_combined['net'] != 0) & \
-                               df_fGl_combined[
+        bs_second_level_filt = (~df_fGl_combined['ledger_name'].isin(exclude_list)) & (
+                df_fGl_combined['voucher_date'] <= fy) & df_fGl_combined[
                                    'forth_level'].isin(['Assets', 'Liabilities', 'Equity'])
         bs_second_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'second_level']]
         # this will create a root level table for balance sheet
         bs_second_level = bs_second_level.groupby(by=['second_level'], as_index=False)['net'].sum()
+        bs_second_level.set_index('second_level', inplace=True)
+        bs_second_level.loc['Accruals & Other Payables', 'net'] = bs_second_level.loc[
+                                                                      'Accruals & Other Payables', 'net'] + cr_ar_amt + (elimanated_total if elimanated_total > 0 else 0)
+
+        bs_second_level.loc['Other Receivable', 'net'] = bs_second_level.loc['Other Receivable', 'net'] + dr_ap_amt + (elimanated_total if elimanated_total < 0 else 0)
+
+        bs_second_level.reset_index(inplace=True)
+
         # creating a row for related party payable
         rpp_row = {
             'second_level': 'Due to Related Parties', 'net': rpp}
@@ -976,12 +1001,13 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
         # this will create a group level table one level above from root level
         bs_third_level = bs_third_level.groupby(by=['third_level'], as_index=False)['net'].sum()
 
-        pl_period_filt = (df_fGl_combined['forth_level'].isin(['Expenses', ' Expenses'])) & (
+        pl_period_filt = (df_fGl_combined['forth_level'].isin(['Expenses', 'Income'])) & (
                 df_fGl_combined['voucher_date'] <= fy)
         # this will provide overall profit/loss figure for the period 2021-01-01 till current date
         pl_period: float = df_fGl_combined.loc[pl_period_filt, 'net'].sum()
         bs_third_level.set_index('third_level', inplace=True)
-        # below will add whole period pl figure to the opening retained earnings will return retuned earning as of selected date
+        # below will add whole period pl figure to the opening retained earnings will return retuned earning as of
+        # selected date
         sum_re: float = bs_third_level.loc['Retained Earnings', 'net'] + pl_period
         # create a new row for retained earnings. There is a difference in Retained Earnings and Retained Earning
         sum_re_row = {'third_level': 'Retained Earning', 'net': sum_re}
@@ -1010,11 +1036,13 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
     bs_combined_filt = (~bs_combined['second_level'].isin(
         ['Retained Earnings', 'Liabilities', 'Statutory Reserve', 'Capital'])) & (
                                bs_combined[
-                                   'net'] != 0)  # group totals excluded from this filter are already appering in other groupings
+                                   'net'] != 0)  # group totals excluded from this filter are already appering in
+    # other groupings
     bs_combined = bs_combined.loc[bs_combined_filt]
     bs_combined = pd.pivot_table(data=bs_combined, index=[
         'second_level'], columns='as_of',
-                                 values='net')  # this will pivot from |second_level|net|as_of --> |second_level|As of 2023-12-20|As of 2022-12-20
+                                 values='net')  # this will pivot from |second_level|net|as_of --> |second_level|As
+    # of 2023-12-20|As of 2022-12-20
     bs_combined['Variance'] = bs_combined[f'As of {bs_date.date()}'] - bs_combined[f'As of {bs_date_py.date()}']
     try:
         bs_combined['% Var'] = (bs_combined[f'As of {bs_date.date()}'] / bs_combined[
@@ -1057,10 +1085,7 @@ WHERE "dCoAAdler".first_level IN ('Logistics Revenue', 'Manpower Revenue', 'Proj
             {
                 'if':
                     {
-                        'filter_query': '{second_level} eq "Non Current Assets" || {second_level} eq "Current Assets" '
-                                        '|| {second_level} eq "Assets"  || {second_level} eq "Non Current '
-                                        'Liabilities" || {second_level} eq "Current Liabilities" || {second_level} eq '
-                                        '"Liability & Equity" || {second_level} eq "Equity"'},
+                        'filter_query': '{second_level} eq "Non Current Assets" || {second_level} eq "Current Assets"  || {second_level} eq "Assets"  || {second_level} eq "Non Current Liabilities" || {second_level} eq "Current Liabilities" || {second_level} eq "Liability & Equity" || {second_level} eq "Equity"'},
                 'fontWeight': 'bold',
                 'border-top': '1px solid black'
             }
