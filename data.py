@@ -304,7 +304,7 @@ bs_sort_order = {'Property, Plant  & Equipment': 1,
                  'Assets': 11,
                  'Share Capital': 12,
                  'Statutory Reserves': 13,
-                 'Retained Earning': 14,
+                 'Retained Earnings': 14,
                  'Equity': 15,
                  'Provisions': 16,
                  'Lease Liabilities': 17,
@@ -402,4 +402,5 @@ related_parties = {'Auto Class Automobiles W.L.L': ['Auto Class Automobiles', 'A
                    'Ziebart W.L.L': ['Ziebart'], }
 
 elimination_ledgers = ['Refundable Deposits', 'Advance to Suppliers - PDC', 'PDC Payables',
-                       'Other Payable - Security Cheques', 'Refundable Deposits - Security Cheques','PDC Receivable']
+                       'Other Payable - Security Cheques', 'Refundable Deposits - Security Cheques', 'PDC Receivable']
+

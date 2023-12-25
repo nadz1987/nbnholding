@@ -162,6 +162,7 @@ pl_tab_content = html.Div(
 
     ]
 )
+
 bs_tab_content = html.Div(
     children=[
         dbc.Row(
@@ -190,116 +191,13 @@ bs_tab_content = html.Div(
                     children=[
                         html.H6('Key Ratios', className="text-center"),
                         html.Hr(),
-                        dbc.CardGroup(
-                            [
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Working Capital', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
-
-                                        ], className='border-start border-5 border-danger'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Debt-to-Equity', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-warning'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Current Ratio', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-success'
-                                    )
-                                )
-                            ]
-                        ),
-                        html.Hr(),
-                        dbc.CardGroup(
-                            [
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Days Sales Outstanding', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
-
-                                        ], className='border-start border-5 border-warning'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Days Payable Outstanding', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-success'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Cash Conversion Ratio', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-success'
-                                    )
-                                )
-                            ]
-                        ),
-                        html.Hr(),
-                        dbc.CardGroup(
-                            [
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Asset Turnover Ratio', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('QAR 216,342', className="text-center")])
-
-                                        ], className='border-start border-5 border-danger'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('Return on Equity', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-warning'
-                                    )
-                                ),
-                                dbc.Card(
-                                    html.Div(
-                                        children=[
-
-                                            dbc.CardHeader('That Other Ratio', className="text-center fw-bold"),
-                                            dbc.CardBody([html.H4('2.5x', className="text-center")])
-
-                                        ], className='border-start border-5 border-warning'
-                                    )
-                                )
-                            ]
-                        ),
+                        html.Div(id='bs-main-kpi')
 
                     ], width={'size': 4}
                 ),
                 dbc.Col(
                     children=[
-                        html.H6(children=[], className="text-center", id='bs-date'),
+                        html.H6(children=[],  id='bs-date'),
                         html.Div(
                             children=[], id='balance-sheet'
                         )
@@ -371,7 +269,8 @@ first_level = pd.DataFrame(
         Output(component_id='monthly-pl', component_property='data'),
         Output(component_id='explanations', component_property='children'),
         Output(component_id='balance-sheet', component_property='children'),
-        Output(component_id='bs-date', component_property='children')
+        Output(component_id='bs-date', component_property='children'),
+        Output(component_id='bs-main-kpi', component_property='children')
 
     ],
     [
@@ -915,11 +814,9 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
 
     )
 
-    ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################
-
     bs_date = dt.strptime(bs_date, '%Y-%m-%d')  # this is the current date by default
     bs_date_py = bs_date - relativedelta(years=1)
-
+    ######################################## BALANCE SHEET CALCULATIONS STARTS FROM HERE ##############################a
     bs_combined = pd.DataFrame({'second_level': [], 'net': [], 'as_of': []})
     for fy in [bs_date_py, bs_date]:  # as we need as of current date and period one year ago
         # initializing the exclude ledgers list - currently this list contains inter-company receivable/payable ledgers
@@ -929,10 +826,8 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
         # party receivable and payable balances from the gl. Same related party having more than one ledger account (
         # Receivable/Payable/ Wrongly created duplicate ledgers will be clubbed together. Total of positive related
         # party balances will be due from related parties and negative will be due to related parties.
-
-        rp_filt = (df_fGl_combined['ledger_name'].isin(exclude_list)) & (
-                df_fGl_combined[
-                    'voucher_date'] <= fy)  # j returns a list, i assigns such list items to a master list which
+        rp_filt = (df_fGl_combined['ledger_name'].isin(exclude_list)) & (df_fGl_combined[
+                                                                             'voucher_date'] <= fy)  # j returns a list, i assigns such list items to a master list which
         # consist of all the ledger names of related parties
         df_rp = df_fGl_combined.loc[rp_filt, ['ledger_name', 'net']]
 
@@ -942,7 +837,9 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
         # each related party need to assign a single value to each ledger which mentioned in related parties list.
         df_rp = df_rp.groupby(by=['ledger_name'], as_index=False)['net'].sum()  # this will group inter-company
         # ledgers having multiple ledger names
+
         rpp: float = df_rp.loc[df_rp['net'] >= 0, 'net'].sum()  # sum of related-parties which has negative values
+
         rpr: float = df_rp.loc[df_rp['net'] < 0, 'net'].sum()  # sum of related-parties which has positive values
 
         ##### RULE NUMBER TWO - NOMINAL LEDGER ACCOUNT ELIMINATION #######
@@ -968,81 +865,100 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
         cr_ar_list: list = df_cr_ar.loc[df_cr_ar['net'] > 0, 'ledger_name'].tolist()
         cr_ar_amt: float = df_cr_ar.loc[df_cr_ar['net'] > 0, 'net'].sum()  # return a + figure
         exclude_list = exclude_list + dr_ap_list + cr_ar_list
-
-
         # below will take all the balance sheet ledger accounts which are not related party receivable or payable.
         bs_second_level_filt = (~df_fGl_combined['ledger_name'].isin(exclude_list)) & (
-                df_fGl_combined['voucher_date'] <= fy) & df_fGl_combined[
-                                   'forth_level'].isin(['Assets', 'Liabilities', 'Equity'])
+                df_fGl_combined['voucher_date'] <= fy) & df_fGl_combined['forth_level'].isin(
+            ['Assets', 'Liabilities', 'Equity'])
         bs_second_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'second_level']]
         # this will create a root level table for balance sheet
         bs_second_level = bs_second_level.groupby(by=['second_level'], as_index=False)['net'].sum()
+
         bs_second_level.set_index('second_level', inplace=True)
         bs_second_level.loc['Accruals & Other Payables', 'net'] = bs_second_level.loc[
-                                                                      'Accruals & Other Payables', 'net'] + cr_ar_amt + (elimanated_total if elimanated_total > 0 else 0)
+                                                                      'Accruals & Other Payables', 'net'] + cr_ar_amt + (
+                                                                      elimanated_total if elimanated_total > 0 else 0)
 
-        bs_second_level.loc['Other Receivable', 'net'] = bs_second_level.loc['Other Receivable', 'net'] + dr_ap_amt + (elimanated_total if elimanated_total < 0 else 0)
-
+        bs_second_level.loc['Other Receivable', 'net'] = bs_second_level.loc['Other Receivable', 'net'] + dr_ap_amt + (
+            elimanated_total if elimanated_total < 0 else 0)
         bs_second_level.reset_index(inplace=True)
-
         # creating a row for related party payable
-        rpp_row = {
-            'second_level': 'Due to Related Parties', 'net': rpp}
+        rpp_row = {'second_level': 'Due to Related Parties', 'net': rpp}
         bs_second_level = bs_second_level._append(rpp_row, ignore_index=True)
         # creating a row for related party receivable
-        rpr_row = {
-            'second_level': 'Due from Related Parties', 'net': rpr}
+        rpr_row = {'second_level': 'Due from Related Parties', 'net': rpr}
         bs_second_level = bs_second_level._append(rpr_row, ignore_index=True)
-        # new column in the format of As of 2023-12-20 or As of 2022-12-20 according to loop
-
-        bs_second_level['as_of'] = f'As of {fy.date()}'  # 01
-
-        bs_third_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'third_level']]
-        # this will create a group level table one level above from root level
-        bs_third_level = bs_third_level.groupby(by=['third_level'], as_index=False)['net'].sum()
 
         pl_period_filt = (df_fGl_combined['forth_level'].isin(['Expenses', 'Income'])) & (
                 df_fGl_combined['voucher_date'] <= fy)
         # this will provide overall profit/loss figure for the period 2021-01-01 till current date
         pl_period: float = df_fGl_combined.loc[pl_period_filt, 'net'].sum()
-        bs_third_level.set_index('third_level', inplace=True)
+
         # below will add whole period pl figure to the opening retained earnings will return retuned earning as of
         # selected date
-        sum_re: float = bs_third_level.loc['Retained Earnings', 'net'] + pl_period
-        # create a new row for retained earnings. There is a difference in Retained Earnings and Retained Earning
-        sum_re_row = {'third_level': 'Retained Earning', 'net': sum_re}
-        bs_third_level.reset_index(inplace=True)
-        # we are appending retained earnings to the third level. Now this table has two retained earnings
-        bs_third_level = bs_third_level._append(sum_re_row, ignore_index=True)
-        bs_third_level.rename(columns={'third_level': 'second_level'},
-                              inplace=True)  # to make this table inline with second_level
-        bs_third_level['as_of'] = f'As of {fy.date()}'  # 02
+        bs_second_level.set_index('second_level', inplace=True)
+        bs_second_level.loc['Retained Earnings', 'net'] = bs_second_level.loc['Retained Earnings', 'net'] + pl_period
+        bs_second_level.reset_index(inplace=True)
 
-        bs_forth_level = df_fGl_combined.loc[bs_second_level_filt, ['net', 'forth_level']]
-        # this is the final level of grouping
-        bs_forth_level = bs_forth_level.groupby(by=['forth_level'], as_index=False)['net'].sum()
-        bs_forth_level.set_index('forth_level', inplace=True)
-        # this is to create total equity and liability sum figure for the balance sheet
-        sum_e_l: float = bs_forth_level.loc['Equity', 'net'] + bs_forth_level.loc['Liabilities', 'net']
-        bs_forth_level.reset_index(inplace=True)
-        # create a row for equity and total liability
-        sum_e_l_row = {
-            'forth_level': 'Liability & Equity', 'net': sum_e_l}
-        bs_forth_level = bs_forth_level._append(sum_e_l_row, ignore_index=True)
-        bs_forth_level.rename(columns={'forth_level': 'second_level'}, inplace=True)  # to be inline with second_level
-        bs_forth_level['as_of'] = f'As of {fy.date()}'  # 03
-        bs_combined = pd.concat([bs_second_level, bs_third_level, bs_forth_level, bs_combined])
+        for i in ['Assets', 'Equity', 'Liabilities']:
+            e_l_row = {'second_level': '', 'net': 0}
+            forth_level_total: float = 0
+            for j in df_fGl_combined.loc[df_fGl_combined['forth_level'] == i, 'third_level'].unique().tolist():
+                third_level_total: float = 0
+                bs_second_level.set_index('second_level', inplace=True)
+                for k in df_fGl_combined.loc[df_fGl_combined['third_level'] == j, 'second_level'].unique().tolist():
+                    try:
+                        third_level_total = third_level_total + bs_second_level.loc[k, 'net']
+                    except KeyError:
+                        third_level_row = third_level_row
+                third_level_row = {'second_level': j, 'net': third_level_total}
+                bs_second_level.reset_index(inplace=True)
+                bs_second_level = bs_second_level._append(third_level_row, ignore_index=True)
+                bs_second_level.set_index('second_level', inplace=True)
+                try:
+                    forth_level_total = forth_level_total + bs_second_level.loc[j, 'net']
+                except KeyError:
+                    forth_level_total = forth_level_total
+                forth_level_row = {'second_level': i, 'net': forth_level_total}
+                bs_second_level.reset_index(inplace=True)
+
+            bs_second_level = bs_second_level._append(forth_level_row, ignore_index=True)
+            bs_second_level.set_index('second_level', inplace=True)
+            try:
+                e_l_row = {'second_level': 'Liability & Equity',
+                           'net': bs_second_level.loc['Equity', 'net'] + bs_second_level.loc['Liabilities', 'net']}
+            except KeyError:
+                pass
+            bs_second_level.reset_index(inplace=True)
+            bs_second_level = bs_second_level._append(e_l_row, ignore_index=True)
+            bs_second_level['as_of'] = f'As of {fy.date()}'  # 01
+
+        bs_combined = pd.concat([bs_second_level, bs_combined])
 
     bs_combined_filt = (~bs_combined['second_level'].isin(
-        ['Retained Earnings', 'Liabilities', 'Statutory Reserve', 'Capital'])) & (
-                               bs_combined[
-                                   'net'] != 0)  # group totals excluded from this filter are already appering in
-    # other groupings
+        ['Liabilities', 'Statutory Reserve', 'Capital', 'Current Accounts', 'Retained Earning', '']))
+
     bs_combined = bs_combined.loc[bs_combined_filt]
-    bs_combined = pd.pivot_table(data=bs_combined, index=[
-        'second_level'], columns='as_of',
+
+    bs_combined.set_index('second_level', inplace=True)
+
+    bs_combined = pd.pivot_table(data=bs_combined, index=['second_level'], columns='as_of',
                                  values='net')  # this will pivot from |second_level|net|as_of --> |second_level|As
     # of 2023-12-20|As of 2022-12-20
+    asset_headings: list = ['Assets'] + df_fGl_combined.loc[
+        df_fGl_combined['forth_level'] == 'Assets', 'third_level'].unique().tolist() + df_fGl_combined.loc[
+                               df_fGl_combined['forth_level'] == 'Assets', 'second_level'].unique().tolist()
+    bs_combined.reset_index(inplace=True)
+
+    def assets_positive(x):
+        if x['second_level'] in asset_headings:
+            return x[[f'As of {bs_date.date()}', f'As of {bs_date_py.date()}']] * -1
+        else:
+            return x[[f'As of {bs_date.date()}', f'As of {bs_date_py.date()}']]
+
+    bs_combined[[f'As of {bs_date.date()}', f'As of {bs_date_py.date()}']] = bs_combined.apply(
+        lambda x: assets_positive(x), axis=1)
+    bs_combined.set_index('second_level', inplace=True)
+
     bs_combined['Variance'] = bs_combined[f'As of {bs_date.date()}'] - bs_combined[f'As of {bs_date_py.date()}']
     try:
         bs_combined['% Var'] = (bs_combined[f'As of {bs_date.date()}'] / bs_combined[
@@ -1062,25 +978,150 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
     # otherwise dataTable will not show the second_level(Description)
     bs_combined.reset_index(inplace=True)
 
+    ######BALANCE SHEET KPI###############
+
+    bs_main_kpi = {'working_capital': {'long_name': 'Working Capital', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                                       'url': 'https://www.investopedia.com/terms/w/workingcapital.asp'},
+                   'debt_to_equity': {'long_name': 'Debt-to-Equity', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                                      'url': 'https://www.investopedia.com/terms/d/debtequityratio.asp'},
+                   'current_ratio': {'long_name': 'Current Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                                     'url': 'https://www.investopedia.com/terms/c/currentratio.asp'},
+                   'dso': {'long_name': 'Days Sales Outstanding', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                           'url': 'https://www.investopedia.com/terms/d/dso.asp'},
+                   'dpo': {'long_name': 'Days Payable Outstanding', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                           'url': 'https://www.investopedia.com/terms/d/dpo.asp'},
+                   'ccr': {'long_name': 'Cash Conversion Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                           'url': 'https://www.investopedia.com/terms/c/cashconversioncycle.asp'},
+                   'asset_turnover': {'long_name': 'Asset Turnover Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                                      'url': 'https://www.investopedia.com/terms/a/assetturnover.asp'},
+                   'roe': {'long_name': 'Return on Equity', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                           'url': 'https://www.investopedia.com/terms/r/returnonequity.asp'}}
+
+    bs_combined.set_index('second_level', inplace=True)
+    for fy in [bs_date, bs_date_py]:
+        fy_year = 'cy' if fy == bs_date else 'py'
+        bs_main_kpi['working_capital'][fy_year] = bs_combined.loc['Current Assets', f'As of {fy.date()}'] - \
+                                                  bs_combined.loc[
+                                                      'Current Liabilities', f'As of {fy.date()}']
+        try:
+            bs_main_kpi['debt_to_equity'][fy_year] = (bs_combined.loc['Current Liabilities', f'As of {fy.date()}'] +
+                                                      bs_combined.loc[
+                                                          'Non Current Liabilities', f'As of {fy.date()}']) / \
+                                                     bs_combined.loc['Equity', f'As of {fy.date()}']
+            bs_main_kpi['current_ratio'][fy_year] = bs_combined.loc['Current Assets', f'As of {fy.date()}'] / \
+                                                    bs_combined.loc[
+                                                        'Current Liabilities', f'As of {fy.date()}']
+            dso = (bs_combined.loc['Trade Receivables', f'As of {fy.date()}'] - bs_combined.loc[
+                'Due from Related Parties', f'As of {fy.date()}']) / df_fGl_combined.loc[
+                      df_fGl_combined['third_level'].isin(['Direct Income']) & (
+                              df_fGl_combined['voucher_date'] >= fy.replace(month=1, day=1)) & (
+                              df_fGl_combined['voucher_date'] <= fy), 'net'].sum() * 365
+            bs_main_kpi['dso'][fy_year] = dso
+            dpo = bs_combined.loc['Accounts Payables', f'As of {fy.date()}'] / df_fGl_combined.loc[
+                df_fGl_combined['third_level'].isin(['Cost of Sales']) & (
+                        df_fGl_combined['voucher_date'] >= fy.replace(month=1, day=1)) & (
+                        df_fGl_combined['voucher_date'] <= fy), 'net'].sum() * 365
+            bs_main_kpi['dpo'][fy_year] = dpo
+            bs_main_kpi['ccr'][fy_year] = dso - dpo
+            bs_main_kpi['asset_turnover'][fy_year] = df_fGl_combined.loc[
+                                                         df_fGl_combined['third_level'].isin(['Direct Income']) & (
+                                                                 df_fGl_combined['voucher_date'] >= fy.replace(month=1,
+                                                                                                               day=1)) & (
+                                                                 df_fGl_combined['voucher_date'] <= fy), 'net'].sum() / \
+                                                     bs_combined.loc['Assets', f'As of {fy.date()}']
+            bs_main_kpi['roe'][fy_year] = df_fGl_combined.loc[
+                                              df_fGl_combined['forth_level'].isin(['Expenses', 'Income']) & (
+                                                      df_fGl_combined['voucher_date'] >= fy.replace(month=1, day=1)) & (
+                                                      df_fGl_combined['voucher_date'] <= fy), 'net'].sum() / \
+                                          bs_combined.loc[
+                                              'Equity', f'As of {fy.date()}']
+        except ZeroDivisionError:
+            bs_main_kpi['debt_to_equity'][fy_year] = 0
+            bs_main_kpi['current_ratio'][fy_year] = 0
+            bs_main_kpi['dso'][fy_year] = 0
+            bs_main_kpi['dpo'][fy_year] = 0
+            bs_main_kpi['ccr'][fy_year] = 0
+            bs_main_kpi['asset_turnover'][fy_year] = 0
+            bs_main_kpi['roe'][fy_year] = 0
+    for i in bs_main_kpi:
+        bs_main_kpi[i]['var'] = bs_main_kpi[i]['cy'] - bs_main_kpi[i]['py']
+        try:
+            bs_main_kpi[i]['var_pct'] = bs_main_kpi[i]['var'] / bs_main_kpi[i]['py']
+        except ZeroDivisionError:
+            bs_main_kpi[i]['var_pct'] = 0
+
+    bs_combined.reset_index(inplace=True)
+
+    no_of_rows = 4
+    no_of_columns = 2
+
+    cards = []
+    tile_number = -1
+    for i in range(no_of_rows):
+        row_cards = []
+        for j in range(no_of_columns):
+            tile_number = tile_number + 1
+            card = dbc.Card(
+                html.Div(
+                    children=[
+                        dbc.CardHeader(dbc.CardLink(
+                            [v["long_name"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0],
+                            target="_blank",
+                            href=[v["url"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]),
+                            className="text-center fw-bold"),
+                        dbc.CardBody([html.P(
+                            f'CY: {[v["cy"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
+                            className="text-center fw-bold fs-3 text mt-0 mb-0"),
+                            html.P(
+                                f'PY: {[v["py"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
+                                className="text-center fs-4 text mt-0 mb-0"),
+                            html.Div(
+                                [
+                                    html.P(
+                                        f'VAR: {[v["var"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
+                                        className="text-center fs-6 text mt-0 mb-0"),
+                                    html.P('----', className="text-center fs-6 text mt-0 mb-0"),
+                                    html.P(
+                                        f'VAR: {[v["var_pct"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}%',
+                                        className="text-center fs-6 text mt-0 mb-0")
+                                ], className="d-xxl-inline-flex mt-0 mb-0"
+                            )])
+                    ],
+                    className='border-start border-5 border-warning' if
+                    [v["cy"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0] <
+                    [v["py"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][
+                        0] else 'border-start border-5 border-success'
+                )
+            )
+            row_cards.append(card)
+
+        row = dbc.CardGroup(row_cards)
+        cards.append(row)
+        cards.append(html.Hr())
+
+    if cards:
+        cards.pop()
+
     balance_sheet = dash_table.DataTable(
         data=bs_combined.to_dict(orient='records'),
-        columns=[{'name': 'Description', 'id': 'second_level', 'deletable': False, 'selectable': True, 'type': 'text'},
-                 {'name': f'As of {bs_date.date()}', 'id': f'As of {bs_date.date()}', 'deletable': False,
-                  'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
-                 {'name': f'As of {bs_date_py.date()}', 'id': f'As of {bs_date_py.date()}', 'deletable': False,
-                  'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
-                 {'name': 'Variance', 'id': 'Variance', 'deletable': False, 'selectable': True, 'type': 'numeric',
-                  'format': {'specifier': ',.0f'}},
-                 {'name': '% Var', 'id': '% Var', 'deletable': False, 'selectable': True, 'type': 'numeric',
-                  'format': {'specifier': ',.0f'}}, ],
+        columns=[
+            {'name': 'Description', 'id': 'second_level', 'deletable': False, 'selectable': True, 'type': 'text'},
+            {'name': f'As of {bs_date.date()}', 'id': f'As of {bs_date.date()}', 'deletable': False,
+             'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
+            {'name': f'As of {bs_date_py.date()}', 'id': f'As of {bs_date_py.date()}', 'deletable': False,
+             'selectable': True, 'type': 'numeric', 'format': {'specifier': ',.0f'}},
+            {'name': 'Variance', 'id': 'Variance', 'deletable': False, 'selectable': True, 'type': 'numeric',
+             'format': {'specifier': ',.0f'}},
+            {'name': '% Var', 'id': '% Var', 'deletable': False, 'selectable': True, 'type': 'numeric',
+             'format': {'specifier': ',.0f'}}, ],
         id='balance-sheet-tbl',
         style_cell=dict(textAlign='left'),
         style_table={'fontSize': 10,
-                     'height': '500px', 'overflowY': 'scroll'},
+                     },
         style_header=dict(backgroundColor="paleturquoise",
                           fontWeight='bold', border='1px solid black'),
         style_data=dict(backgroundColor="lavender"),
-        fixed_rows={'headers': True, 'data': 0},
+        # fixed_rows={'headers': True, 'data': 0},
         style_data_conditional=([
             {
                 'if':
@@ -1114,5 +1155,6 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
             df_report.to_dict(orient='records'),
             narrations,
             balance_sheet,
-            f'Balance Sheet As of {bs_date.date()}'
+            f'Balance Sheet As of {bs_date.date()}',
+            cards
             ]
