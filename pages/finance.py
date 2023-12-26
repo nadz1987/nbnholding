@@ -197,7 +197,7 @@ bs_tab_content = html.Div(
                 ),
                 dbc.Col(
                     children=[
-                        html.H6(children=[],  id='bs-date'),
+                        html.H6(children=[], id='bs-date'),
                         html.Div(
                             children=[], id='balance-sheet'
                         )
@@ -211,7 +211,7 @@ bs_tab_content = html.Div(
                 dbc.Col(
                     children=[
                         html.H6('Total Assets', className="text-center"),
-                        dcc.Graph(id='ta-pie', figure={})
+                        dcc.Graph(id='ta-pie-chart', figure={})
                     ], width={'size': 6}
                 ),
                 dbc.Col(
@@ -270,8 +270,9 @@ first_level = pd.DataFrame(
         Output(component_id='explanations', component_property='children'),
         Output(component_id='balance-sheet', component_property='children'),
         Output(component_id='bs-date', component_property='children'),
-        Output(component_id='bs-main-kpi', component_property='children')
-
+        Output(component_id='bs-main-kpi', component_property='children'),
+        Output(component_id='tl-pie', component_property='figure'),
+        Output(component_id='ta-pie-chart', component_property='figure'),
     ],
     [
         Input(component_id='start-date', component_property='data'),
@@ -806,7 +807,9 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
             {
                 'if':
                     {
-                        'filter_query': '{Description} contains "Cost of Sales" || {Description} contains "Direct Income" || {Description} contains "Finance Cost"  || {Description} contains "Overhead" || {Description} contains "Indirect Income"'},
+                        'filter_query': '{Description} contains "Cost of Sales" || {Description} contains "Direct '
+                                        'Income" || {Description} contains "Finance Cost"  || {Description} contains '
+                                        '"Overhead" || {Description} contains "Indirect Income"'},
                 'fontWeight': 'bold',
                 'border-top': '1px solid black'
             }
@@ -827,7 +830,8 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
         # Receivable/Payable/ Wrongly created duplicate ledgers will be clubbed together. Total of positive related
         # party balances will be due from related parties and negative will be due to related parties.
         rp_filt = (df_fGl_combined['ledger_name'].isin(exclude_list)) & (df_fGl_combined[
-                                                                             'voucher_date'] <= fy)  # j returns a list, i assigns such list items to a master list which
+                                                                             'voucher_date'] <= fy)
+        # j returns a list, i assigns such list items to a master list which
         # consist of all the ledger names of related parties
         df_rp = df_fGl_combined.loc[rp_filt, ['ledger_name', 'net']]
 
@@ -949,6 +953,42 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
                                df_fGl_combined['forth_level'] == 'Assets', 'second_level'].unique().tolist()
     bs_combined.reset_index(inplace=True)
 
+    second_level_asset_list: list = df_fGl_combined.loc[
+        df_fGl_combined['forth_level'] == 'Assets', 'second_level'].unique().tolist()
+    pie_chart_assets_df = bs_combined.loc[
+        bs_combined['second_level'].isin(second_level_asset_list) & bs_combined[f'As of {bs_date.date()}'] != 0, [
+            'second_level', f'As of {bs_date.date()}']]
+    pie_chart_assets_df[f'As of {bs_date.date()}'] = pie_chart_assets_df[f'As of {bs_date.date()}'].apply(
+        lambda x: x * -1)
+
+    pie_chart_assets = px.pie(
+        data_frame=pie_chart_assets_df,
+        names=pie_chart_assets_df['second_level'],
+        values=pie_chart_assets_df[f'As of {bs_date.date()}'],
+        hole=0.3,
+    )
+    pie_chart_assets.update_traces(
+        pull=[i * 0 if i != max(pie_chart_assets_df[f'As of {bs_date.date()}'].tolist()) else 0.1 for i in
+              pie_chart_assets_df[f'As of {bs_date.date()}'].tolist()],
+    opacity = 0.8)
+
+    second_level_liabilities_list: list = df_fGl_combined.loc[
+        df_fGl_combined['forth_level'] == 'Liabilities', 'second_level'].unique().tolist()
+    pie_chart_liabilities_df = bs_combined.loc[
+        bs_combined['second_level'].isin(second_level_liabilities_list) & bs_combined[f'As of {bs_date.date()}'] != 0, [
+            'second_level', f'As of {bs_date.date()}']]
+
+    pie_chart_liabilities = px.pie(
+        data_frame=pie_chart_liabilities_df,
+        names=pie_chart_liabilities_df['second_level'],
+        values=pie_chart_liabilities_df[f'As of {bs_date.date()}'],
+        hole=0.3
+    )
+    pie_chart_liabilities.update_traces(
+        pull=[i * 0 if i != max(pie_chart_liabilities_df[f'As of {bs_date.date()}'].tolist()) else 0.1 for i in
+              pie_chart_liabilities_df[f'As of {bs_date.date()}'].tolist()],
+    opacity = 0.8)
+
     def assets_positive(x):
         if x['second_level'] in asset_headings:
             return x[[f'As of {bs_date.date()}', f'As of {bs_date_py.date()}']] * -1
@@ -980,19 +1020,19 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
 
     ######BALANCE SHEET KPI###############
 
-    bs_main_kpi = {'working_capital': {'long_name': 'Working Capital', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+    bs_main_kpi = {'working_capital': {'long_name': 'Working Capital', 'cy': 0, 'py': 0,
                                        'url': 'https://www.investopedia.com/terms/w/workingcapital.asp'},
-                   'debt_to_equity': {'long_name': 'Debt-to-Equity', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'debt_to_equity': {'long_name': 'Debt-to-Equity', 'cy': 0, 'py': 0,
                                       'url': 'https://www.investopedia.com/terms/d/debtequityratio.asp'},
-                   'current_ratio': {'long_name': 'Current Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'current_ratio': {'long_name': 'Current Ratio', 'cy': 0, 'py': 0,
                                      'url': 'https://www.investopedia.com/terms/c/currentratio.asp'},
-                   'dso': {'long_name': 'Days Sales Outstanding', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'dso': {'long_name': 'Days Sales Outstanding', 'cy': 0, 'py': 0,
                            'url': 'https://www.investopedia.com/terms/d/dso.asp'},
-                   'dpo': {'long_name': 'Days Payable Outstanding', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'dpo': {'long_name': 'Days Payable Outstanding', 'cy': 0, 'py': 0,
                            'url': 'https://www.investopedia.com/terms/d/dpo.asp'},
-                   'ccr': {'long_name': 'Cash Conversion Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'ccr': {'long_name': 'Cash Conversion Ratio', 'cy': 0, 'py': 0,
                            'url': 'https://www.investopedia.com/terms/c/cashconversioncycle.asp'},
-                   'asset_turnover': {'long_name': 'Asset Turnover Ratio', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
+                   'asset_turnover': {'long_name': 'Asset Turnover Ratio', 'cy': 0, 'py': 0,
                                       'url': 'https://www.investopedia.com/terms/a/assetturnover.asp'},
                    'roe': {'long_name': 'Return on Equity', 'cy': 0, 'py': 0, 'var': 0, 'var_pct': 0,
                            'url': 'https://www.investopedia.com/terms/r/returnonequity.asp'}}
@@ -1075,17 +1115,18 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
                             html.P(
                                 f'PY: {[v["py"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
                                 className="text-center fs-4 text mt-0 mb-0"),
-                            html.Div(
-                                [
-                                    html.P(
-                                        f'VAR: {[v["var"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
-                                        className="text-center fs-6 text mt-0 mb-0"),
-                                    html.P('----', className="text-center fs-6 text mt-0 mb-0"),
-                                    html.P(
-                                        f'VAR: {[v["var_pct"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}%',
-                                        className="text-center fs-6 text mt-0 mb-0")
-                                ], className="d-xxl-inline-flex mt-0 mb-0"
-                            )])
+                            # html.Div(
+                            #     [
+                            #         html.P(
+                            #             f'VAR: {[v["var"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}',
+                            #             className="text-center fs-6 text mt-0 mb-0"),
+                            #         html.P('----', className="text-center fs-6 text mt-0 mb-0"),
+                            #         html.P(
+                            #             f'VAR: {[v["var_pct"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0]:,.0f}%',
+                            #             className="text-center fs-6 text mt-0 mb-0")
+                            #     ], className="d-xxl-inline-flex mt-0 mb-0"
+                            # )
+                        ])
                     ],
                     className='border-start border-5 border-warning' if
                     [v["cy"] for i, (k, v) in enumerate(bs_main_kpi.items()) if i == tile_number][0] <
@@ -1126,7 +1167,10 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
             {
                 'if':
                     {
-                        'filter_query': '{second_level} eq "Non Current Assets" || {second_level} eq "Current Assets"  || {second_level} eq "Assets"  || {second_level} eq "Non Current Liabilities" || {second_level} eq "Current Liabilities" || {second_level} eq "Liability & Equity" || {second_level} eq "Equity"'},
+                        'filter_query': '{second_level} eq "Non Current Assets" || {second_level} eq "Current Assets" '
+                                        ' || {second_level} eq "Assets"  || {second_level} eq "Non Current '
+                                        'Liabilities" || {second_level} eq "Current Liabilities" || {second_level} eq '
+                                        '"Liability & Equity" || {second_level} eq "Equity"'},
                 'fontWeight': 'bold',
                 'border-top': '1px solid black'
             }
@@ -1156,5 +1200,7 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
             narrations,
             balance_sheet,
             f'Balance Sheet As of {bs_date.date()}',
-            cards
+            cards,
+            pie_chart_liabilities,
+            pie_chart_assets,
             ]
