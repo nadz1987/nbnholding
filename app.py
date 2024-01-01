@@ -1,5 +1,5 @@
 import dash
-import dash_auth
+# import dash_auth
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from dash import html, dcc
@@ -11,7 +11,7 @@ import pandas as pd
 app = dash.Dash(name=__name__, external_stylesheets=[
     dbc.themes.PULSE], use_pages=True, title='Dashboard')
 
-dash_auth.BasicAuth(app, USER_MAPPING)
+# dash_auth.BasicAuth(app, USER_MAPPING)
 
 header_row = dbc.Row(
     children=[
