@@ -970,7 +970,7 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
     pie_chart_assets.update_traces(
         pull=[i * 0 if i != max(pie_chart_assets_df[f'As of {bs_date.date()}'].tolist()) else 0.1 for i in
               pie_chart_assets_df[f'As of {bs_date.date()}'].tolist()],
-    opacity = 0.8)
+        opacity=0.8)
 
     second_level_liabilities_list: list = df_fGl_combined.loc[
         df_fGl_combined['forth_level'] == 'Liabilities', 'second_level'].unique().tolist()
@@ -987,7 +987,7 @@ def data_output(start_date, end_date, database, time_freq, active_cell, bs_date)
     pie_chart_liabilities.update_traces(
         pull=[i * 0 if i != max(pie_chart_liabilities_df[f'As of {bs_date.date()}'].tolist()) else 0.1 for i in
               pie_chart_liabilities_df[f'As of {bs_date.date()}'].tolist()],
-    opacity = 0.8)
+        opacity=0.8)
 
     def assets_positive(x):
         if x['second_level'] in asset_headings:
